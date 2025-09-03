@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = 'http://localhost:8000/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -9,13 +9,17 @@ const api = axios.create({
   },
 });
 
-// Test MongoDB connection
+// Test backend connection
 export const testMongoDB = async () => {
   try {
-    const response = await api.get('/test');
-    return response.data;
+    const response = await api.get('/health');
+    return {
+      status: 'success',
+      message: 'Successfully connected to Railway Video Surveillance System!',
+      ...response.data
+    };
   } catch (error) {
-    console.error('Error testing MongoDB connection:', error);
+    console.error('Error testing backend connection:', error);
     throw error;
   }
 };

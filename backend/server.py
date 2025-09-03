@@ -22,6 +22,7 @@ import time
 from collections import defaultdict
 import bcrypt
 import jwt
+from jwt import PyJWTError
 from enum import Enum
 import random
 import math
@@ -30,9 +31,9 @@ ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
 # MongoDB connection
-mongo_url = os.environ['MONGO_URL']
+mongo_url = os.environ.get('MONGO_URL', 'mongodb://localhost:27017/railway_surveillance')
 client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
+db = client[os.environ.get('DB_NAME', 'railway_surveillance')]
 
 # Create directories for video storage
 RECORDINGS_DIR = ROOT_DIR / "recordings"
@@ -279,6 +280,11 @@ class VideoProcessor:
         try:
             current_time = time.time()
             
+            # Ensure frame is valid
+            if frame is None or frame.size == 0:
+                logging.warning("Invalid frame received for processing")
+                return
+            
             # Motion Detection
             if self.last_frame is not None:
                 fg_mask = self.motion_detector.apply(frame)
@@ -372,7 +378,7 @@ def verify_token(token: str) -> dict:
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
         return payload
-    except jwt.PyJWTError:
+    except PyJWTError:
         return None
 
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
@@ -639,17 +645,21 @@ async def websocket_endpoint(websocket: WebSocket):
         await websocket.send_text(json.dumps({
             'type': 'connection',
             'status': 'connected',
-            'timestamp': datetime.now(timezone.utc).isoformat()
+            'timestamp': datetime.now(timezone.utc).isoformat(),
+            'server': 'Railway Video Surveillance System'
         }))
         
         while True:
             try:
                 # Send video frames from all active cameras
                 frames = []
-                for camera_id, processor in video_processors.items():
-                    frame_data = processor.get_frame()
-                    if frame_data:
-                        frames.append(frame_data)
+                for camera_id, processor in list(video_processors.items()):
+                    try:
+                        frame_data = processor.get_frame()
+                        if frame_data:
+                            frames.append(frame_data)
+                    except Exception as e:
+                        logging.error(f"Error getting frame from camera {camera_id}: {e}")
                 
                 if frames:
                     await websocket.send_text(json.dumps({
@@ -663,7 +673,8 @@ async def websocket_endpoint(websocket: WebSocket):
                     await websocket.send_text(json.dumps({
                         'type': 'heartbeat',
                         'timestamp': datetime.now(timezone.utc).isoformat(),
-                        'active_cameras': len(video_processors)
+                        'active_cameras': len(video_processors),
+                        'status': 'healthy'
                     }))
                 
                 await asyncio.sleep(0.1)  # ~10 FPS
@@ -675,12 +686,13 @@ async def websocket_endpoint(websocket: WebSocket):
                 await asyncio.sleep(1)  # Prevent tight error loop
                 
     except WebSocketDisconnect:
-        pass
+        logging.info("WebSocket client disconnected")
     except Exception as e:
         logging.error(f"WebSocket error: {e}")
     finally:
         if websocket in websocket_connections:
             websocket_connections.remove(websocket)
+            logging.info(f"Removed WebSocket connection. Active connections: {len(websocket_connections)}")
 
 # Include router
 app.include_router(api_router)
@@ -689,17 +701,19 @@ app.include_router(api_router)
 app.mount("/recordings", StaticFiles(directory=RECORDINGS_DIR), name="recordings")
 
 # CORS
+allowed_origins = os.environ.get('CORS_ORIGINS', 'http://localhost:3000,http://localhost:5000').split(',')
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
+    allow_origins=allowed_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # Configure logging
+log_level = os.environ.get('LOG_LEVEL', 'INFO')
 logging.basicConfig(
-    level=logging.INFO,
+    level=getattr(logging, log_level.upper()),
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
