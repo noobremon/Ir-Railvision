@@ -22,7 +22,7 @@ import time
 from collections import defaultdict
 import bcrypt
 import jwt
-from jwt import PyJWTError
+from jwt.exceptions import PyJWTError
 from enum import Enum
 import random
 import math
@@ -694,6 +694,16 @@ async def websocket_endpoint(websocket: WebSocket):
             websocket_connections.remove(websocket)
             logging.info(f"Removed WebSocket connection. Active connections: {len(websocket_connections)}")
 
+@api_router.get("/health")
+async def health_check():
+    return {
+        "status": "healthy",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "active_cameras": len(video_processors),
+        "connected_clients": len(websocket_connections),
+        "system": "Railway Video Surveillance System v1.0"
+    }
+
 # Include router
 app.include_router(api_router)
 
@@ -776,13 +786,3 @@ async def shutdown_event():
     client.close()
     logger.info("Railway Video Surveillance System shutting down...")
 
-# Health check endpoint
-@api_router.get("/health")
-async def health_check():
-    return {
-        "status": "healthy",
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "active_cameras": len(video_processors),
-        "connected_clients": len(websocket_connections),
-        "system": "Railway Video Surveillance System v1.0"
-    }
