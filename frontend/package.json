@@ -1,0 +1,27 @@
+{
+  "name": "frontend",
+  "version": "1.0.0",
+  "description": "na",
+  "keywords": [
+    "na"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "na"
+  },
+  "license": "ISC",
+  "author": "a",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "na"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.12"
+  },
+  "dependencies": {
+    "axios": "^1.11.0"
+  }
+}
