@@ -711,7 +711,7 @@ app.include_router(api_router)
 app.mount("/recordings", StaticFiles(directory=RECORDINGS_DIR), name="recordings")
 
 # CORS
-allowed_origins = os.environ.get('CORS_ORIGINS', 'http://localhost:3000,http://localhost:5000').split(',')
+allowed_origins = os.environ.get('CORS_ORIGINS', 'http://localhost:3000,http://localhost:3001,http://localhost:5000').split(',')
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
