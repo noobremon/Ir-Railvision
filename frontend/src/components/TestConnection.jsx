@@ -3,22 +3,18 @@ import { testMongoDB } from '../lib/api';
 
 const TestConnection = () => {
   const [connectionStatus, setConnectionStatus] = useState('Checking connection...');
-  const [systemInfo, setSystemInfo] = useState({});
+  const [collections, setCollections] = useState([]);
 
   useEffect(() => {
     const checkConnection = async () => {
       try {
         const result = await testMongoDB();
         setConnectionStatus(`✅ ${result.message}`);
-        if (result.active_cameras !== undefined) {
-          setSystemInfo({
-            activeCameras: result.active_cameras,
-            connectedClients: result.connected_clients,
-            system: result.system
-          });
+        if (result.collections) {
+          setCollections(result.collections);
         }
       } catch (error) {
-        setConnectionStatus('❌ Failed to connect to backend. Make sure the FastAPI server is running on port 8000.');
+        setConnectionStatus('❌ Failed to connect to backend. Make sure the server is running.');
         console.error('Connection error:', error);
       }
     };
@@ -28,16 +24,16 @@ const TestConnection = () => {
 
   return (
     <div className="p-4 max-w-md mx-auto mt-10 bg-white rounded-lg shadow-md">
-      <h2 className="text-xl font-bold mb-4">Backend Connection Test</h2>
+      <h2 className="text-xl font-bold mb-4">MongoDB Connection Test</h2>
       <p className="mb-4">{connectionStatus}</p>
       
-      {Object.keys(systemInfo).length > 0 && (
+      {collections.length > 0 && (
         <div>
-          <h3 className="font-semibold mb-2">System Information:</h3>
+          <h3 className="font-semibold mb-2">Available Collections:</h3>
           <ul className="list-disc pl-5">
-            <li className="text-sm">Active Cameras: {systemInfo.activeCameras}</li>
-            <li className="text-sm">Connected Clients: {systemInfo.connectedClients}</li>
-            <li className="text-sm">System: {systemInfo.system}</li>
+            {collections.map((collection, index) => (
+              <li key={index} className="text-sm">{collection}</li>
+            ))}
           </ul>
         </div>
       )}
