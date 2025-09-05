@@ -30,10 +30,27 @@ import math
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-# MongoDB connection
+# MongoDB connection with fallback
 mongo_url = os.environ.get('MONGO_URL', 'mongodb://localhost:27017/railway_surveillance')
-client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ.get('DB_NAME', 'railway_surveillance')]
+client = None
+db = None
+MONGO_AVAILABLE = False
+
+async def init_database():
+    global client, db, MONGO_AVAILABLE
+    try:
+        client = AsyncIOMotorClient(mongo_url, serverSelectionTimeoutMS=5000)
+        # Test connection
+        await client.admin.command('ping')
+        db = client[os.environ.get('DB_NAME', 'railway_surveillance')]
+        MONGO_AVAILABLE = True
+        print(f"✅ Connected to MongoDB at {mongo_url}")
+    except Exception as e:
+        print(f"⚠️  MongoDB not available: {e}")
+        print("📝 Running in mock database mode")
+        client = None
+        db = None
+        MONGO_AVAILABLE = False
 
 # Create directories for video storage
 RECORDINGS_DIR = ROOT_DIR / "recordings"
@@ -138,6 +155,78 @@ class Recording(BaseModel):
 active_cameras = {}
 websocket_connections = []
 video_processors = {}
+
+# Mock database storage when MongoDB is not available
+mock_db = {
+    'users': [],
+    'cameras': [],
+    'events': [],
+    'recordings': []
+}
+
+# Database helper functions
+async def db_insert_one(collection_name: str, document: dict):
+    if MONGO_AVAILABLE:
+        return await db[collection_name].insert_one(document)
+    else:
+        # Mock implementation
+        document['_id'] = str(uuid.uuid4())
+        mock_db[collection_name].append(document)
+        return type('MockResult', (), {'inserted_id': document['_id']})()
+
+async def db_find_one(collection_name: str, query: dict):
+    if MONGO_AVAILABLE:
+        return await db[collection_name].find_one(query)
+    else:
+        # Mock implementation
+        for doc in mock_db[collection_name]:
+            if all(doc.get(k) == v for k, v in query.items()):
+                return doc
+        return None
+
+async def db_find(collection_name: str, query: dict = None, limit: int = 1000):
+    if MONGO_AVAILABLE:
+        cursor = db[collection_name].find(query or {})
+        return await cursor.sort("timestamp", -1).limit(limit).to_list(limit)
+    else:
+        # Mock implementation
+        results = mock_db[collection_name]
+        if query:
+            results = [doc for doc in results if all(doc.get(k) == v for k, v in query.items())]
+        return sorted(results, key=lambda x: x.get('timestamp', ''), reverse=True)[:limit]
+
+async def db_update_one(collection_name: str, query: dict, update: dict):
+    if MONGO_AVAILABLE:
+        return await db[collection_name].update_one(query, update)
+    else:
+        # Mock implementation
+        for doc in mock_db[collection_name]:
+            if all(doc.get(k) == v for k, v in query.items()):
+                if '$set' in update:
+                    doc.update(update['$set'])
+                return type('MockResult', (), {'matched_count': 1, 'modified_count': 1})()
+        return type('MockResult', (), {'matched_count': 0, 'modified_count': 0})()
+
+async def db_delete_one(collection_name: str, query: dict):
+    if MONGO_AVAILABLE:
+        return await db[collection_name].delete_one(query)
+    else:
+        # Mock implementation
+        for i, doc in enumerate(mock_db[collection_name]):
+            if all(doc.get(k) == v for k, v in query.items()):
+                del mock_db[collection_name][i]
+                return type('MockResult', (), {'deleted_count': 1})()
+        return type('MockResult', (), {'deleted_count': 0})()
+
+async def db_count_documents(collection_name: str, query: dict = None):
+    if MONGO_AVAILABLE:
+        return await db[collection_name].count_documents(query or {})
+    else:
+        # Mock implementation
+        results = mock_db[collection_name]
+        if query:
+            results = [doc for doc in results if all(doc.get(k) == v for k, v in query.items())]
+        return len(results)
 
 # Mock video frames for demonstration
 def generate_mock_frame():
@@ -327,7 +416,7 @@ class VideoProcessor:
         """Enhanced event triggering with better data"""
         try:
             # Get camera info for GPS
-            camera = await db.cameras.find_one({"id": self.camera_id})
+            camera = await db_find_one('cameras', {"id": self.camera_id})
             
             event = Event(
                 camera_id=self.camera_id,
@@ -341,7 +430,7 @@ class VideoProcessor:
             )
             
             # Save to database
-            await db.events.insert_one(event.dict())
+            await db_insert_one('events', event.dict())
             
             # Notify connected websockets
             notification = {
@@ -387,7 +476,7 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     if payload is None:
         raise HTTPException(status_code=401, detail="Invalid token")
     
-    user = await db.users.find_one({"username": payload.get("sub")})
+    user = await db_find_one('users', {"username": payload.get("sub")})
     if user is None:
         raise HTTPException(status_code=401, detail="User not found")
     
@@ -397,7 +486,7 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
 @api_router.post("/auth/register")
 async def register(user_data: UserCreate):
     # Check if user exists
-    existing_user = await db.users.find_one({"username": user_data.username})
+    existing_user = await db_find_one('users', {"username": user_data.username})
     if existing_user:
         raise HTTPException(status_code=400, detail="Username already exists")
     
@@ -412,7 +501,7 @@ async def register(user_data: UserCreate):
     user_dict = user.dict()
     user_dict["password"] = hashed_password
     
-    await db.users.insert_one(user_dict)
+    await db_insert_one('users', user_dict)
     
     # Create access token
     access_token = create_access_token({"sub": user.username, "role": user.role})
@@ -421,7 +510,7 @@ async def register(user_data: UserCreate):
 
 @api_router.post("/auth/login")
 async def login(login_data: UserLogin):
-    user = await db.users.find_one({"username": login_data.username})
+    user = await db_find_one('users', {"username": login_data.username})
     if not user or not verify_password(login_data.password, user["password"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
@@ -444,17 +533,17 @@ async def create_camera(camera_data: CameraCreate, current_user: User = Depends(
         raise HTTPException(status_code=403, detail="Insufficient permissions")
     
     camera = Camera(**camera_data.dict())
-    await db.cameras.insert_one(camera.dict())
+    await db_insert_one('cameras', camera.dict())
     return camera
 
 @api_router.get("/cameras", response_model=List[Camera])
 async def get_cameras(current_user: User = Depends(get_current_user)):
-    cameras = await db.cameras.find().to_list(1000)
+    cameras = await db_find('cameras')
     return [Camera(**camera) for camera in cameras]
 
 @api_router.get("/cameras/{camera_id}", response_model=Camera)
 async def get_camera(camera_id: str, current_user: User = Depends(get_current_user)):
-    camera = await db.cameras.find_one({"id": camera_id})
+    camera = await db_find_one('cameras', {"id": camera_id})
     if not camera:
         raise HTTPException(status_code=404, detail="Camera not found")
     return Camera(**camera)
@@ -464,15 +553,12 @@ async def update_camera(camera_id: str, camera_data: CameraCreate, current_user:
     if current_user.role not in [UserRole.ADMIN]:
         raise HTTPException(status_code=403, detail="Insufficient permissions")
     
-    result = await db.cameras.update_one(
-        {"id": camera_id},
-        {"$set": camera_data.dict()}
-    )
+    result = await db_update_one('cameras', {"id": camera_id}, {"$set": camera_data.dict()})
     
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Camera not found")
     
-    updated_camera = await db.cameras.find_one({"id": camera_id})
+    updated_camera = await db_find_one('cameras', {"id": camera_id})
     return Camera(**updated_camera)
 
 @api_router.delete("/cameras/{camera_id}")
@@ -486,7 +572,7 @@ async def delete_camera(camera_id: str, current_user: User = Depends(get_current
         processor.stop()
         del video_processors[camera_id]
     
-    result = await db.cameras.delete_one({"id": camera_id})
+    result = await db_delete_one('cameras', {"id": camera_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Camera not found")
     
@@ -495,7 +581,7 @@ async def delete_camera(camera_id: str, current_user: User = Depends(get_current
 @api_router.post("/cameras/{camera_id}/start")
 async def start_camera(camera_id: str, current_user: User = Depends(get_current_user)):
     try:
-        camera = await db.cameras.find_one({"id": camera_id})
+        camera = await db_find_one('cameras', {"id": camera_id})
         if not camera:
             raise HTTPException(status_code=404, detail="Camera not found")
         
@@ -506,15 +592,12 @@ async def start_camera(camera_id: str, current_user: User = Depends(get_current_
         
         if processor.start():
             video_processors[camera_id] = processor
-            await db.cameras.update_one(
-                {"id": camera_id}, 
-                {
-                    "$set": {
-                        "is_active": True,
-                        "last_seen": datetime.now(timezone.utc)
-                    }
+            await db_update_one('cameras', {"id": camera_id}, {
+                "$set": {
+                    "is_active": True,
+                    "last_seen": datetime.now(timezone.utc)
                 }
-            )
+            })
             
             return {
                 "message": "Camera started successfully",
@@ -540,7 +623,7 @@ async def stop_camera(camera_id: str, current_user: User = Depends(get_current_u
     processor.stop()
     del video_processors[camera_id]
     
-    await db.cameras.update_one({"id": camera_id}, {"$set": {"is_active": False}})
+    await db_update_one('cameras', {"id": camera_id}, {"$set": {"is_active": False}})
     return {"message": "Camera stopped successfully", "status": "inactive"}
 
 @api_router.get("/events", response_model=List[Event])
@@ -562,21 +645,18 @@ async def get_events(
     if severity:
         query["severity"] = severity
     
-    events = await db.events.find(query).sort("timestamp", -1).limit(limit).to_list(limit)
+    events = await db_find('events', query, limit)
     return [Event(**event) for event in events]
 
 @api_router.put("/events/{event_id}/acknowledge")
 async def acknowledge_event(event_id: str, current_user: User = Depends(get_current_user)):
-    result = await db.events.update_one(
-        {"id": event_id},
-        {
-            "$set": {
-                "is_acknowledged": True,
-                "acknowledged_by": current_user.username,
-                "acknowledged_at": datetime.now(timezone.utc)
-            }
+    result = await db_update_one('events', {"id": event_id}, {
+        "$set": {
+            "is_acknowledged": True,
+            "acknowledged_by": current_user.username,
+            "acknowledged_at": datetime.now(timezone.utc)
         }
-    )
+    })
     
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Event not found")
@@ -593,24 +673,22 @@ async def get_recordings(
     if camera_id:
         query["camera_id"] = camera_id
     
-    recordings = await db.recordings.find(query).sort("start_time", -1).limit(limit).to_list(limit)
+    recordings = await db_find('recordings', query, limit)
     return [Recording(**recording) for recording in recordings]
 
 @api_router.get("/dashboard/stats")
 async def get_dashboard_stats(current_user: User = Depends(get_current_user)):
-    total_cameras = await db.cameras.count_documents({})
+    total_cameras = await db_count_documents('cameras')
     active_cameras = len(video_processors)
     
     # Today's events
     today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
-    today_events = await db.events.count_documents({
-        "timestamp": {"$gte": today_start}
-    })
+    today_events = await db_count_documents('events', {"timestamp": {"$gte": today_start}})
     
-    unacknowledged_events = await db.events.count_documents({"is_acknowledged": False})
+    unacknowledged_events = await db_count_documents('events', {"is_acknowledged": False})
     
     # Recent events by type
-    recent_events = await db.events.find().sort("timestamp", -1).limit(10).to_list(10)
+    recent_events = await db_find('events', {}, 10)
     events_by_type = {}
     for event in recent_events:
         event_type = event["event_type"]
@@ -618,7 +696,7 @@ async def get_dashboard_stats(current_user: User = Depends(get_current_user)):
     
     # System health
     system_health = {
-        "database": "online",
+        "database": "online" if MONGO_AVAILABLE else "mock_mode",
         "websocket": "active" if len(websocket_connections) > 0 else "inactive",
         "video_processing": "active" if len(video_processors) > 0 else "inactive",
         "storage": "available"
@@ -730,10 +808,13 @@ logger = logging.getLogger(__name__)
 
 @app.on_event("startup")
 async def startup_event():
+    # Initialize database connection first
+    await init_database()
+    
     logger.info("Railway Video Surveillance System starting up...")
     
     # Create default admin user if none exists
-    admin_exists = await db.users.find_one({"role": "admin"})
+    admin_exists = await db_find_one('users', {"role": "admin"})
     if not admin_exists:
         admin_user = User(
             username="admin",
@@ -742,11 +823,11 @@ async def startup_event():
         )
         admin_dict = admin_user.dict()
         admin_dict["password"] = hash_password("admin123")  # Change in production
-        await db.users.insert_one(admin_dict)
+        await db_insert_one('users', admin_dict)
         logger.info("Default admin user created: admin/admin123")
     
     # Create sample users for different roles
-    operator_exists = await db.users.find_one({"username": "operator"})
+    operator_exists = await db_find_one('users', {"username": "operator"})
     if not operator_exists:
         operator_user = User(
             username="operator",
@@ -755,10 +836,10 @@ async def startup_event():
         )
         operator_dict = operator_user.dict()
         operator_dict["password"] = hash_password("operator123")
-        await db.users.insert_one(operator_dict)
+        await db_insert_one('users', operator_dict)
         logger.info("Default operator user created: operator/operator123")
     
-    security_exists = await db.users.find_one({"username": "security"})
+    security_exists = await db_find_one('users', {"username": "security"})
     if not security_exists:
         security_user = User(
             username="security",
@@ -767,7 +848,7 @@ async def startup_event():
         )
         security_dict = security_user.dict()
         security_dict["password"] = hash_password("security123")
-        await db.users.insert_one(security_dict)
+        await db_insert_one('users', security_dict)
         logger.info("Default security user created: security/security123")
 
 @app.on_event("shutdown")
@@ -783,6 +864,11 @@ async def shutdown_event():
         except:
             pass
     
-    client.close()
+    if client and MONGO_AVAILABLE:
+        client.close()
     logger.info("Railway Video Surveillance System shutting down...")
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8001, log_level="info")
 
