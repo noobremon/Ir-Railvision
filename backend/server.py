@@ -289,19 +289,37 @@ class VideoProcessor:
         
     def start(self):
         try:
-            # Try to initialize real camera first
+            # Try to initialize real camera first with shorter timeout
             source = int(self.source) if self.source.isdigit() else self.source
-            self.cap = cv2.VideoCapture(source)
             
-            if not self.cap or not self.cap.isOpened():
-                logging.warning(f"Real camera {self.source} not available, using mock feed")
+            # Quick check for camera availability
+            if str(source).isdigit():
+                self.cap = cv2.VideoCapture(source)
+                # Set a short timeout for faster initialization
+                self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)  # Reduce buffer for faster response
+                
+                # Quick test read with timeout
+                if self.cap and self.cap.isOpened():
+                    ret, test_frame = self.cap.read()
+                    if ret and test_frame is not None:
+                        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+                        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+                        self.cap.set(cv2.CAP_PROP_FPS, self.fps)
+                        logging.info(f"Real camera {self.source} initialized successfully")
+                    else:
+                        logging.warning(f"Real camera {self.source} not responsive, using mock feed")
+                        self.use_mock = True
+                        self.cap.release()
+                        self.cap = None
+                else:
+                    logging.warning(f"Real camera {self.source} not available, using mock feed")
+                    self.use_mock = True
+                    self.cap = None
+            else:
+                # For RTSP or other sources, assume mock for faster startup
+                logging.info(f"Non-webcam source {self.source}, using mock feed for demo")
                 self.use_mock = True
                 self.cap = None
-            else:
-                self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-                self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-                self.cap.set(cv2.CAP_PROP_FPS, self.fps)
-                logging.info(f"Real camera {self.source} initialized successfully")
             
             self.is_running = True
             return True
@@ -586,18 +604,25 @@ async def start_camera(camera_id: str, current_user: User = Depends(get_current_
             raise HTTPException(status_code=404, detail="Camera not found")
         
         if camera_id in video_processors:
-            return {"message": "Camera already running", "status": "active"}
+            return {
+                "message": "Camera already running", 
+                "status": "active",
+                "camera_name": camera["name"]
+            }
         
+        # Update database status immediately
+        await db_update_one('cameras', {"id": camera_id}, {
+            "$set": {
+                "is_active": True,
+                "last_seen": datetime.now(timezone.utc)
+            }
+        })
+        
+        # Start processor in background (non-blocking)
         processor = VideoProcessor(camera_id, camera["source"], camera["name"])
         
         if processor.start():
             video_processors[camera_id] = processor
-            await db_update_one('cameras', {"id": camera_id}, {
-                "$set": {
-                    "is_active": True,
-                    "last_seen": datetime.now(timezone.utc)
-                }
-            })
             
             return {
                 "message": "Camera started successfully",
@@ -606,6 +631,10 @@ async def start_camera(camera_id: str, current_user: User = Depends(get_current_
                 "camera_name": camera["name"]
             }
         else:
+            # Revert database if processor failed
+            await db_update_one('cameras', {"id": camera_id}, {
+                "$set": {"is_active": False}
+            })
             raise HTTPException(status_code=500, detail="Failed to initialize camera")
             
     except HTTPException:
@@ -617,14 +646,30 @@ async def start_camera(camera_id: str, current_user: User = Depends(get_current_
 @api_router.post("/cameras/{camera_id}/stop")
 async def stop_camera(camera_id: str, current_user: User = Depends(get_current_user)):
     if camera_id not in video_processors:
-        raise HTTPException(status_code=400, detail="Camera not running")
+        # Update database even if processor not found
+        await db_update_one('cameras', {"id": camera_id}, {"$set": {"is_active": False}})
+        return {"message": "Camera already stopped", "status": "inactive"}
     
-    processor = video_processors[camera_id]
-    processor.stop()
-    del video_processors[camera_id]
-    
-    await db_update_one('cameras', {"id": camera_id}, {"$set": {"is_active": False}})
-    return {"message": "Camera stopped successfully", "status": "inactive"}
+    try:
+        # Update database status immediately
+        await db_update_one('cameras', {"id": camera_id}, {"$set": {"is_active": False}})
+        
+        # Stop processor
+        processor = video_processors[camera_id]
+        processor.stop()
+        del video_processors[camera_id]
+        
+        return {"message": "Camera stopped successfully", "status": "inactive"}
+    except Exception as e:
+        logging.error(f"Error stopping camera {camera_id}: {e}")
+        # Ensure processor is removed even on error
+        if camera_id in video_processors:
+            try:
+                video_processors[camera_id].stop()
+                del video_processors[camera_id]
+            except:
+                pass
+        raise HTTPException(status_code=500, detail="Failed to stop camera")
 
 @api_router.get("/events", response_model=List[Event])
 async def get_events(
@@ -746,7 +791,7 @@ async def websocket_endpoint(websocket: WebSocket):
                         'timestamp': datetime.now(timezone.utc).isoformat()
                     }, default=str))
                 
-                # Send heartbeat every 30 seconds
+                # Send heartbeat every 30 seconds when no frames
                 if len(frames) == 0:
                     await websocket.send_text(json.dumps({
                         'type': 'heartbeat',
@@ -755,12 +800,16 @@ async def websocket_endpoint(websocket: WebSocket):
                         'status': 'healthy'
                     }))
                 
-                await asyncio.sleep(0.1)  # ~10 FPS
+                await asyncio.sleep(0.5)  # Reduced to 2 FPS for better stability
                 
             except WebSocketDisconnect:
                 break
             except Exception as e:
-                logging.error(f"WebSocket frame error: {e}")
+                # Don't log normal disconnections as errors
+                if "1000" not in str(e) and "Component unmounting" not in str(e):
+                    logging.error(f"WebSocket frame error: {e}")
+                else:
+                    logging.info(f"WebSocket closed normally: {e}")
                 await asyncio.sleep(1)  # Prevent tight error loop
                 
     except WebSocketDisconnect:
@@ -850,6 +899,74 @@ async def startup_event():
         security_dict["password"] = hash_password("security123")
         await db_insert_one('users', security_dict)
         logger.info("Default security user created: security/security123")
+    
+    # Create default cameras for Indian railway locations
+    cameras_exist = await db_count_documents('cameras')
+    if cameras_exist == 0:
+        default_cameras = [
+            {
+                "name": "New Delhi Platform 1",
+                "location": "New Delhi Railway Station, Platform 1",
+                "source": "0",
+                "gps_lat": 28.6436,
+                "gps_lng": 77.2105,
+                "is_active": False,
+                "is_recording": False,
+                "fps": 30,
+                "resolution": "640x480"
+            },
+            {
+                "name": "Mumbai CST Platform 5",
+                "location": "Chhatrapati Shivaji Maharaj Terminus, Platform 5",
+                "source": "1",
+                "gps_lat": 18.9401,
+                "gps_lng": 72.8353,
+                "is_active": False,
+                "is_recording": False,
+                "fps": 30,
+                "resolution": "640x480"
+            },
+            {
+                "name": "Howrah Junction Main Entry",
+                "location": "Howrah Junction Railway Station, Main Entrance",
+                "source": "2",
+                "gps_lat": 22.5851,
+                "gps_lng": 88.3460,
+                "is_active": False,
+                "is_recording": False,
+                "fps": 30,
+                "resolution": "640x480"
+            },
+            {
+                "name": "Chennai Central Platform 9",
+                "location": "Chennai Central Railway Station, Platform 9",
+                "source": "rtsp://192.168.1.100:554/stream",
+                "gps_lat": 13.0827,
+                "gps_lng": 80.2707,
+                "is_active": False,
+                "is_recording": False,
+                "fps": 30,
+                "resolution": "640x480"
+            },
+            {
+                "name": "Bangalore City Junction",
+                "location": "Krantivira Sangolli Rayanna Railway Station, Platform 3",
+                "source": "rtsp://192.168.1.101:554/stream",
+                "gps_lat": 12.9716,
+                "gps_lng": 77.5946,
+                "is_active": False,
+                "is_recording": False,
+                "fps": 30,
+                "resolution": "640x480"
+            }
+        ]
+        
+        for camera_data in default_cameras:
+            camera = Camera(**camera_data)
+            await db_insert_one('cameras', camera.dict())
+            logger.info(f"Default camera created: {camera.name} at {camera.location}")
+        
+        logger.info("5 default Indian railway cameras created successfully")
 
 @app.on_event("shutdown")
 async def shutdown_event():

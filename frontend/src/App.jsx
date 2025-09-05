@@ -241,6 +241,7 @@ const VideoFeed = ({ camera, isActive, onStart, onStop, onDelete, onEdit }) => {
   const [connectionStatus, setConnectionStatus] = useState('disconnected');
   const [frameCount, setFrameCount] = useState(0);
   const [mockMode, setMockMode] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (frameData && canvasRef.current) {
@@ -261,7 +262,10 @@ const VideoFeed = ({ camera, isActive, onStart, onStop, onDelete, onEdit }) => {
   // Listen for frame updates
   useEffect(() => {
     const handleFrameUpdate = (event) => {
-      setFrameData(event.detail);
+      const frameDetails = event.detail;
+      setFrameData(frameDetails.frame);
+      setFrameCount(frameDetails.frameCount || 0);
+      setMockMode(frameDetails.mock || false);
       setConnectionStatus('connected');
     };
 
@@ -312,18 +316,44 @@ const VideoFeed = ({ camera, isActive, onStart, onStop, onDelete, onEdit }) => {
             </Badge>
             <div className="flex space-x-1">
               {isActive ? (
-                <Button size="sm" variant="destructive" onClick={() => onStop(camera.id)}>
-                  <Square className="h-4 w-4" />
+                <Button 
+                  size="sm" 
+                  variant="destructive" 
+                  onClick={async () => {
+                    setIsLoading(true);
+                    await onStop(camera.id);
+                    setIsLoading(false);
+                  }}
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Square className="h-4 w-4" />
+                  )}
                 </Button>
               ) : (
-                <Button size="sm" variant="default" onClick={() => onStart(camera.id)}>
-                  <Play className="h-4 w-4" />
+                <Button 
+                  size="sm" 
+                  variant="default" 
+                  onClick={async () => {
+                    setIsLoading(true);
+                    await onStart(camera.id);
+                    setIsLoading(false);
+                  }}
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Play className="h-4 w-4" />
+                  )}
                 </Button>
               )}
-              <Button size="sm" variant="outline" onClick={() => onEdit(camera)}>
+              <Button size="sm" variant="outline" onClick={() => onEdit(camera)} disabled={isLoading}>
                 <Edit className="h-4 w-4" />
               </Button>
-              <Button size="sm" variant="destructive" onClick={() => onDelete(camera.id)}>
+              <Button size="sm" variant="destructive" onClick={() => onDelete(camera.id)} disabled={isLoading}>
                 <Trash2 className="h-4 w-4" />
               </Button>
             </div>
@@ -357,9 +387,14 @@ const VideoFeed = ({ camera, isActive, onStart, onStop, onDelete, onEdit }) => {
         </div>
         <div className="mt-3 flex items-center justify-between text-sm text-gray-400">
           <span>Source: {camera.source}</span>
-          {isActive && frameCount > 0 && (
-            <span>Frames: {frameCount}</span>
-          )}
+          <div className="flex items-center space-x-2">
+            {isActive && frameCount > 0 && (
+              <span>Frames: {frameCount}</span>
+            )}
+            {mockMode && (
+              <Badge variant="secondary" className="text-xs">DEMO</Badge>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -391,10 +426,21 @@ const Dashboard = () => {
 
   // Fetch data on component mount
   useEffect(() => {
-    fetchCameras();
-    fetchEvents();
-    fetchStats();
-    connectWebSocket();
+    const initializeApp = async () => {
+      // Fetch initial data
+      await Promise.all([
+        fetchCameras(),
+        fetchEvents(),
+        fetchStats()
+      ]);
+      
+      // Connect WebSocket after a brief delay to ensure backend is ready
+      setTimeout(() => {
+        connectWebSocket();
+      }, 1000);
+    };
+    
+    initializeApp();
 
     // Set up periodic updates
     const statsInterval = setInterval(fetchStats, 10000);
@@ -403,19 +449,33 @@ const Dashboard = () => {
     return () => {
       clearInterval(statsInterval);
       clearInterval(eventsInterval);
-      if (wsRef.current) {
-        wsRef.current.close();
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.close(1000, 'Component unmounting');
       }
     };
   }, []);
 
   const connectWebSocket = () => {
     try {
+      // Close existing connection if any
+      if (wsRef.current) {
+        if (wsRef.current.readyState === WebSocket.OPEN) {
+          console.log('WebSocket already connected');
+          return;
+        }
+        if (wsRef.current.readyState === WebSocket.CONNECTING) {
+          console.log('WebSocket connection in progress');
+          return;
+        }
+      }
+      
       const wsUrl = 'ws://localhost:8000/api/ws';
+      console.log('Attempting WebSocket connection to:', wsUrl);
+      
       wsRef.current = new WebSocket(wsUrl);
 
       wsRef.current.onopen = () => {
-        console.log('WebSocket connected');
+        console.log('WebSocket connected successfully');
         setConnectionStatus('connected');
       };
 
@@ -423,40 +483,71 @@ const Dashboard = () => {
         try {
           const data = JSON.parse(event.data);
           
-          if (data.type === 'camera_frame') {
-            const canvas = document.querySelector(`canvas[data-camera-id="${data.camera_id}"]`);
-            if (canvas) {
-              const frameUpdateEvent = new CustomEvent('frameUpdate', { detail: data.frame });
-              canvas.dispatchEvent(frameUpdateEvent);
-            }
-          } else if (data.type === 'new_event') {
-            setEvents(prev => [data.event, ...prev]);
+          if (data.type === 'video_frames') {
+            // Handle multiple camera frames
+            data.data.forEach(frameData => {
+              const canvas = document.querySelector(`canvas[data-camera-id="${frameData.camera_id}"]`);
+              if (canvas) {
+                const frameUpdateEvent = new CustomEvent('frameUpdate', { 
+                  detail: {
+                    frame: frameData.frame,
+                    frameCount: frameData.frame_count,
+                    mock: frameData.mock
+                  }
+                });
+                canvas.dispatchEvent(frameUpdateEvent);
+              }
+            });
+          } else if (data.type === 'event') {
+            setEvents(prev => [data.data, ...prev]);
             fetchStats();
             toast({
               title: "New Security Event",
-              description: `${data.event.event_type} detected at ${data.event.camera_name}`,
+              description: `${data.data.event_type} detected at ${data.data.camera_name}`,
               variant: "destructive",
             });
+          } else if (data.type === 'connection') {
+            console.log('WebSocket connection confirmed:', data);
+          } else if (data.type === 'heartbeat') {
+            // Heartbeat received - only log occasionally
+            if (Math.random() < 0.1) { // Log only 10% of heartbeats
+              console.log('WebSocket heartbeat active');
+            }
           }
         } catch (error) {
-          console.error('WebSocket message error:', error);
+          console.error('WebSocket message parsing error:', error);
         }
       };
 
-      wsRef.current.onclose = () => {
-        console.log('WebSocket disconnected');
+      wsRef.current.onclose = (event) => {
+        console.log('WebSocket disconnected. Code:', event.code, 'Reason:', event.reason);
         setConnectionStatus('disconnected');
-        // Attempt to reconnect after 5 seconds
-        setTimeout(connectWebSocket, 5000);
+        
+        // Only attempt reconnection if it wasn't a manual close and not too frequent
+        if (event.code !== 1000) {
+          console.log('Attempting to reconnect WebSocket in 5 seconds...');
+          setTimeout(() => {
+            if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+              connectWebSocket();
+            }
+          }, 5000);
+        }
       };
 
       wsRef.current.onerror = (error) => {
-        console.error('WebSocket error:', error);
+        console.error('WebSocket connection error:', error);
         setConnectionStatus('error');
       };
+      
     } catch (error) {
-      console.error('Failed to connect WebSocket:', error);
+      console.error('Failed to initialize WebSocket:', error);
       setConnectionStatus('error');
+      
+      // Retry connection after 10 seconds on initialization error
+      setTimeout(() => {
+        console.log('Retrying WebSocket connection...');
+        connectWebSocket();
+      }, 10000);
     }
   };
 
@@ -464,13 +555,18 @@ const Dashboard = () => {
     try {
       const response = await axios.get(`${API}/cameras`);
       setCameras(response.data);
+      console.log('Cameras loaded successfully:', response.data.length);
     } catch (error) {
       console.error('Failed to fetch cameras:', error);
-      toast({
-        title: "Failed to Load Cameras",
-        description: "Unable to fetch camera list",
-        variant: "destructive",
-      });
+      if (error.response?.status === 401) {
+        console.log('Authentication required for cameras');
+      } else {
+        toast({
+          title: "Failed to Load Cameras",
+          description: "Unable to fetch camera list",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -478,8 +574,16 @@ const Dashboard = () => {
     try {
       const response = await axios.get(`${API}/events`);
       setEvents(response.data);
+      console.log('Events loaded successfully:', response.data.length);
     } catch (error) {
       console.error('Failed to fetch events:', error);
+      if (error.response?.status !== 401) {
+        toast({
+          title: "Failed to Load Events",
+          description: "Unable to fetch event list",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -487,15 +591,27 @@ const Dashboard = () => {
     try {
       const response = await axios.get(`${API}/dashboard/stats`);
       setStats(response.data);
+      console.log('Stats loaded successfully');
     } catch (error) {
       console.error('Failed to fetch stats:', error);
+      if (error.response?.status !== 401) {
+        toast({
+          title: "Failed to Load Statistics",
+          description: "Unable to fetch dashboard statistics",
+          variant: "destructive",
+        });
+      }
     }
   };
 
   const startCamera = async (cameraId) => {
     try {
-      await axios.post(`${API}/cameras/${cameraId}/start`);
+      // Optimistically update UI first for immediate feedback
       setActiveCameras(prev => new Set([...prev, cameraId]));
+      
+      const response = await axios.post(`${API}/cameras/${cameraId}/start`);
+      
+      // Update stats without waiting
       fetchStats();
       
       toast({
@@ -503,6 +619,13 @@ const Dashboard = () => {
         description: "Camera feed activated successfully",
       });
     } catch (error) {
+      // Revert optimistic update on error
+      setActiveCameras(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(cameraId);
+        return newSet;
+      });
+      
       toast({
         title: "Failed to Start Camera",
         description: error.response?.data?.detail || "Camera activation failed",
@@ -513,12 +636,16 @@ const Dashboard = () => {
 
   const stopCamera = async (cameraId) => {
     try {
-      await axios.post(`${API}/cameras/${cameraId}/stop`);
+      // Optimistically update UI first for immediate feedback
       setActiveCameras(prev => {
         const newSet = new Set(prev);
         newSet.delete(cameraId);
         return newSet;
       });
+      
+      const response = await axios.post(`${API}/cameras/${cameraId}/stop`);
+      
+      // Update stats without waiting
       fetchStats();
       
       toast({
@@ -526,6 +653,9 @@ const Dashboard = () => {
         description: "Camera feed deactivated",
       });
     } catch (error) {
+      // Revert optimistic update on error
+      setActiveCameras(prev => new Set([...prev, cameraId]));
+      
       toast({
         title: "Failed to Stop Camera",
         description: error.response?.data?.detail || "Camera deactivation failed",
@@ -822,6 +952,166 @@ const Dashboard = () => {
                 ))}
               </div>
             )}
+
+            {/* Add Camera Dialog */}
+            <Dialog open={isAddCameraOpen} onOpenChange={setIsAddCameraOpen}>
+              <DialogContent className="bg-gray-900 border-gray-700 text-white">
+                <DialogHeader>
+                  <DialogTitle>Add New Camera</DialogTitle>
+                  <DialogDescription className="text-gray-400">
+                    Configure a new camera for the surveillance system.
+                  </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleAddCamera} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Camera Name</Label>
+                    <Input
+                      id="name"
+                      value={newCamera.name}
+                      onChange={(e) => setNewCamera({...newCamera, name: e.target.value})}
+                      className="bg-gray-800 border-gray-600"
+                      placeholder="Platform 1 Camera"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="location">Location</Label>
+                    <Input
+                      id="location"
+                      value={newCamera.location}
+                      onChange={(e) => setNewCamera({...newCamera, location: e.target.value})}
+                      className="bg-gray-800 border-gray-600"
+                      placeholder="Platform 1, Main Station"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="source">Camera Source</Label>
+                    <Select 
+                      value={newCamera.source} 
+                      onValueChange={(value) => setNewCamera({...newCamera, source: value})}
+                    >
+                      <SelectTrigger className="bg-gray-800 border-gray-600">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-gray-800 border-gray-600">
+                        <SelectItem value="0">Default Webcam (0)</SelectItem>
+                        <SelectItem value="1">USB Camera (1)</SelectItem>
+                        <SelectItem value="2">USB Camera (2)</SelectItem>
+                        <SelectItem value="rtsp://192.168.1.100:554/stream">IP Camera (RTSP)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="gps_lat">GPS Latitude</Label>
+                      <Input
+                        id="gps_lat"
+                        type="number"
+                        step="any"
+                        value={newCamera.gps_lat}
+                        onChange={(e) => setNewCamera({...newCamera, gps_lat: parseFloat(e.target.value) || 0})}
+                        className="bg-gray-800 border-gray-600"
+                        placeholder="28.6139"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="gps_lng">GPS Longitude</Label>
+                      <Input
+                        id="gps_lng"
+                        type="number"
+                        step="any"
+                        value={newCamera.gps_lng}
+                        onChange={(e) => setNewCamera({...newCamera, gps_lng: parseFloat(e.target.value) || 0})}
+                        className="bg-gray-800 border-gray-600"
+                        placeholder="77.2090"
+                      />
+                    </div>
+                  </div>
+                  <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700">
+                    Add Camera
+                  </Button>
+                </form>
+              </DialogContent>
+            </Dialog>
+
+            {/* Edit Camera Dialog */}
+            {editingCamera && (
+              <Dialog open={isEditCameraOpen} onOpenChange={setIsEditCameraOpen}>
+                <DialogContent className="bg-gray-900 border-gray-700 text-white">
+                  <DialogHeader>
+                    <DialogTitle>Edit Camera</DialogTitle>
+                    <DialogDescription className="text-gray-400">
+                      Update camera configuration.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <form onSubmit={handleUpdateCamera} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-name">Camera Name</Label>
+                      <Input
+                        id="edit-name"
+                        value={editingCamera.name}
+                        onChange={(e) => setEditingCamera({...editingCamera, name: e.target.value})}
+                        className="bg-gray-800 border-gray-600"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-location">Location</Label>
+                      <Input
+                        id="edit-location"
+                        value={editingCamera.location}
+                        onChange={(e) => setEditingCamera({...editingCamera, location: e.target.value})}
+                        className="bg-gray-800 border-gray-600"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-source">Camera Source</Label>
+                      <Input
+                        id="edit-source"
+                        value={editingCamera.source}
+                        onChange={(e) => setEditingCamera({...editingCamera, source: e.target.value})}
+                        className="bg-gray-800 border-gray-600"
+                        required
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-gps-lat">GPS Latitude</Label>
+                        <Input
+                          id="edit-gps-lat"
+                          type="number"
+                          step="any"
+                          value={editingCamera.gps_lat}
+                          onChange={(e) => setEditingCamera({...editingCamera, gps_lat: parseFloat(e.target.value) || 0})}
+                          className="bg-gray-800 border-gray-600"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-gps-lng">GPS Longitude</Label>
+                        <Input
+                          id="edit-gps-lng"
+                          type="number"
+                          step="any"
+                          value={editingCamera.gps_lng}
+                          onChange={(e) => setEditingCamera({...editingCamera, gps_lng: parseFloat(e.target.value) || 0})}
+                          className="bg-gray-800 border-gray-600"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex space-x-2">
+                      <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700">
+                        Update Camera
+                      </Button>
+                      <Button type="button" variant="outline" onClick={() => setIsEditCameraOpen(false)} className="border-gray-600">
+                        Cancel
+                      </Button>
+                    </div>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            )}
           </TabsContent>
 
           <TabsContent value="events" className="space-y-6">
@@ -921,7 +1211,15 @@ const Dashboard = () => {
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-6">
+            <div className="flex justify-between items-center flex-wrap gap-4">
+              <div>
+                <h2 className="text-2xl font-bold text-white">System Settings</h2>
+                <p className="text-gray-400">System configuration and user management</p>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* User Profile Card */}
               <Card className="bg-gray-900 border-gray-700">
                 <CardHeader>
                   <CardTitle className="text-white flex items-center">
@@ -936,34 +1234,235 @@ const Dashboard = () => {
                     <span className="text-white font-medium">{user?.username}</span>
                   </div>
                   <div className="flex items-center justify-between">
+                    <span className="text-gray-400">Email</span>
+                    <span className="text-white font-medium">{user?.email}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
                     <span className="text-gray-400">Role</span>
                     <Badge variant="secondary" className="bg-blue-500/20 text-blue-400">
                       {user?.role?.replace('_', ' ').toUpperCase()}
                     </Badge>
                   </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-400">Status</span>
+                    <Badge variant="default" className="bg-green-500/20 text-green-400">
+                      Active
+                    </Badge>
+                  </div>
                 </CardContent>
               </Card>
               
+              {/* System Status Card */}
               <Card className="bg-gray-900 border-gray-700">
                 <CardHeader>
                   <CardTitle className="text-white flex items-center">
                     <Server className="h-5 w-5 mr-2" />
                     System Status
                   </CardTitle>
-                  <CardDescription className="text-gray-400">Current system health</CardDescription>
+                  <CardDescription className="text-gray-400">Current system health and performance</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-400">Connection</span>
+                    <span className="text-gray-400">Backend</span>
+                    <Badge variant="default" className="bg-green-500/20 text-green-400">
+                      <Database className="h-3 w-3 mr-1" />
+                      Online
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-400">Database</span>
+                    <Badge variant={stats.system_health?.database === 'online' ? 'default' : 'secondary'} 
+                           className={stats.system_health?.database === 'online' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}>
+                      {stats.system_health?.database === 'online' ? 'Connected' : 'Mock Mode'}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-400">WebSocket</span>
                     <Badge variant={connectionStatus === 'connected' ? 'default' : 'destructive'} 
-                           className={connectionStatus === 'connected' ? 'bg-green-500/20 text-green-400' : ''}>
+                           className={connectionStatus === 'connected' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}>
                       {connectionStatus === 'connected' ? 'Connected' : 'Disconnected'}
                     </Badge>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-400">Version</span>
+                    <span className="text-gray-400">Active Cameras</span>
+                    <span className="text-white font-medium">{stats.active_cameras || 0}/{stats.total_cameras || 0}</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* System Health Overview */}
+              <Card className="bg-gray-900 border-gray-700">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center">
+                    <Activity className="h-5 w-5 mr-2" />
+                    System Health
+                  </CardTitle>
+                  <CardDescription className="text-gray-400">Overall system performance metrics</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-400">Video Processing</span>
+                    <Badge variant={stats.system_health?.video_processing === 'active' ? 'default' : 'secondary'}
+                           className={stats.system_health?.video_processing === 'active' ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'}>
+                      {stats.system_health?.video_processing === 'active' ? 'Active' : 'Inactive'}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-400">Storage</span>
+                    <Badge variant="default" className="bg-green-500/20 text-green-400">
+                      Available
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-400">Connected Clients</span>
+                    <span className="text-white font-medium">{stats.connected_clients || 0}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-400">System Version</span>
                     <span className="text-white font-medium">v1.0.0</span>
                   </div>
+                </CardContent>
+              </Card>
+
+              {/* Events Summary Card */}
+              <Card className="bg-gray-900 border-gray-700">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center">
+                    <AlertTriangle className="h-5 w-5 mr-2" />
+                    Events Summary
+                  </CardTitle>
+                  <CardDescription className="text-gray-400">Recent security events overview</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-400">Today's Events</span>
+                    <span className="text-white font-medium">{stats.today_events || 0}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-400">Unacknowledged</span>
+                    <Badge variant={stats.unacknowledged_events > 0 ? 'destructive' : 'default'}
+                           className={stats.unacknowledged_events > 0 ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}>
+                      {stats.unacknowledged_events || 0}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-400">Total Events</span>
+                    <span className="text-white font-medium">{Object.values(stats.events_by_type || {}).reduce((a, b) => a + b, 0)}</span>
+                  </div>
+                  {stats.events_by_type && Object.keys(stats.events_by_type).length > 0 && (
+                    <div className="pt-2 border-t border-gray-700">
+                      <span className="text-gray-400 text-sm">Most Common:</span>
+                      <div className="mt-1">
+                        {Object.entries(stats.events_by_type)
+                          .sort(([,a], [,b]) => b - a)
+                          .slice(0, 2)
+                          .map(([type, count]) => (
+                            <div key={type} className="flex justify-between text-sm">
+                              <span className="text-gray-300 capitalize">{type.replace('_', ' ')}</span>
+                              <span className="text-white">{count}</span>
+                            </div>
+                          ))
+                        }
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* System Information Card */}
+              <Card className="bg-gray-900 border-gray-700">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center">
+                    <Info className="h-5 w-5 mr-2" />
+                    System Information
+                  </CardTitle>
+                  <CardDescription className="text-gray-400">Technical system details</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-400">Frontend</span>
+                    <span className="text-white font-medium">React + Vite</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-400">Backend</span>
+                    <span className="text-white font-medium">FastAPI + Python</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-400">Database</span>
+                    <span className="text-white font-medium">MongoDB</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-400">Authentication</span>
+                    <span className="text-white font-medium">JWT Tokens</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-400">Real-time</span>
+                    <span className="text-white font-medium">WebSockets</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Quick Actions Card */}
+              <Card className="bg-gray-900 border-gray-700">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center">
+                    <Settings className="h-5 w-5 mr-2" />
+                    Quick Actions
+                  </CardTitle>
+                  <CardDescription className="text-gray-400">System administration tools</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start border-gray-600 text-gray-300 hover:bg-gray-800"
+                    onClick={() => {
+                      fetchStats();
+                      fetchCameras();
+                      fetchEvents();
+                      toast({
+                        title: "System Refreshed",
+                        description: "All data has been reloaded",
+                      });
+                    }}
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Refresh System Data
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start border-gray-600 text-gray-300 hover:bg-gray-800"
+                    onClick={() => {
+                      // Force WebSocket reconnection
+                      if (wsRef.current) {
+                        wsRef.current.close();
+                      }
+                      setTimeout(() => connectWebSocket(), 1000);
+                      toast({
+                        title: "WebSocket Reconnected",
+                        description: "Real-time connection refreshed",
+                      });
+                    }}
+                  >
+                    <Wifi className="h-4 w-4 mr-2" />
+                    Reconnect WebSocket
+                  </Button>
+                  
+                  {user?.role === 'admin' && (
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start border-gray-600 text-gray-300 hover:bg-gray-800"
+                      onClick={() => {
+                        toast({
+                          title: "Export Data",
+                          description: "System data export feature coming soon",
+                        });
+                      }}
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Export System Data
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -977,7 +1476,12 @@ const Dashboard = () => {
 // Main App Component
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true
+      }}
+    >
       <AuthProvider>
         <AppContent />
         <Toaster />
