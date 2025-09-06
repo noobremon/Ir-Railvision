@@ -14,12 +14,41 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background-color: #0f0f10;
   color: #ffffff;
+  line-height: 1.6;
+  letter-spacing: -0.01em;
 }
 
 .App {
   min-height: 100vh;
   background: #0f0f10;
 }
+
+/* Improved typography */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+p {
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Enhanced spacing utilities */
+.space-y-1 > * + * { margin-top: 0.25rem; }
+.space-y-2 > * + * { margin-top: 0.5rem; }
+.space-y-3 > * + * { margin-top: 0.75rem; }
+.space-y-4 > * + * { margin-top: 1rem; }
+.space-y-6 > * + * { margin-top: 1.5rem; }
+.space-y-8 > * + * { margin-top: 2rem; }
+
+.space-x-1 > * + * { margin-left: 0.25rem; }
+.space-x-2 > * + * { margin-left: 0.5rem; }
+.space-x-3 > * + * { margin-left: 0.75rem; }
+.space-x-4 > * + * { margin-left: 1rem; }
+.space-x-6 > * + * { margin-left: 1.5rem; }
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
@@ -31,20 +60,22 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #333;
+  background: #374151;
   border-radius: 4px;
+  transition: background 0.2s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background: #4b5563;
 }
 
-/* Video feed specific styles */
+/* Video feed specific styles with better spacing */
 .video-feed-container {
   position: relative;
   overflow: hidden;
   border-radius: 12px;
   background: #000;
+  margin-bottom: 1rem;
 }
 
 .video-feed-canvas {
@@ -52,9 +83,10 @@ body {
   height: 100%;
   object-fit: cover;
   border-radius: 8px;
+  display: block;
 }
 
-/* Custom badge styles */
+/* Enhanced badge styles with proper spacing */
 .live-badge {
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
@@ -62,9 +94,12 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.5px;
   font-size: 0.75rem;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
   animation: pulse 2s infinite;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
 }
 
 @keyframes pulse {
@@ -83,46 +118,67 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.5px;
   font-size: 0.75rem;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
 }
 
-/* Event type badges */
+/* Enhanced event type badges with consistent spacing */
 .event-badge-motion {
   background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
   color: white;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
 }
 
 .event-badge-intrusion {
   background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
   color: white;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
 }
 
 .event-badge-drowsiness {
   background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
   color: white;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
 }
 
 .event-badge-panic {
   background: linear-gradient(135deg, #ec4899 0%, #db2777 100%);
   color: white;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
 }
 
-/* Glass morphism effect for cards */
+/* Improved glass morphism effect */
 .glass-card {
   background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
-/* Status indicator animations */
+/* Enhanced status indicators with better spacing */
 .status-indicator {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   display: inline-block;
-  margin-right: 8px;
+  margin-right: 0.5rem;
+  flex-shrink: 0;
 }
 
 .status-online {
@@ -141,26 +197,26 @@ body {
 
 @keyframes glow-green {
   0%, 100% {
-    box-shadow: 0 0 5px #10b981;
+    box-shadow: 0 0 8px #10b981;
   }
   50% {
-    box-shadow: 0 0 20px #10b981, 0 0 30px #10b981;
+    box-shadow: 0 0 16px #10b981, 0 0 24px #10b981;
   }
 }
 
 @keyframes glow-red {
   0%, 100% {
-    box-shadow: 0 0 5px #ef4444;
+    box-shadow: 0 0 8px #ef4444;
   }
   50% {
-    box-shadow: 0 0 20px #ef4444, 0 0 30px #ef4444;
+    box-shadow: 0 0 16px #ef4444, 0 0 24px #ef4444;
   }
 }
 
-/* Loading spinner */
+/* Enhanced loading spinner */
 .loading-spinner {
-  border: 2px solid #374151;
-  border-top: 2px solid #3b82f6;
+  border: 3px solid #374151;
+  border-top: 3px solid #3b82f6;
   border-radius: 50%;
   width: 24px;
   height: 24px;
@@ -172,29 +228,56 @@ body {
   100% { transform: rotate(360deg); }
 }
 
-/* Enhanced button hover effects */
+/* Enhanced button hover effects with proper spacing */
 .btn-primary {
   background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
   transition: all 0.3s ease;
   transform: translateY(0);
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  line-height: 1;
 }
 
 .btn-primary:hover {
   background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
   transform: translateY(-2px);
-  box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 12px 28px rgba(59, 130, 246, 0.4);
+}
+
+.btn-secondary {
+  background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+  transition: all 0.3s ease;
+  transform: translateY(0);
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  line-height: 1;
+}
+
+.btn-secondary:hover {
+  background: linear-gradient(135deg, #4b5563 0%, #374151 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(107, 114, 128, 0.4);
 }
 
 .btn-danger {
   background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
   transition: all 0.3s ease;
   transform: translateY(0);
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  line-height: 1;
 }
 
 .btn-danger:hover {
   background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
   transform: translateY(-2px);
-  box-shadow: 0 10px 25px rgba(239, 68, 68, 0.3);
+  box-shadow: 0 12px 28px rgba(239, 68, 68, 0.4);
 }
 
 /* Grid pattern background */
@@ -205,38 +288,97 @@ body {
   background-size: 20px 20px;
 }
 
-/* Custom table styles */
+/* Enhanced table styles with better spacing */
 .custom-table {
-  background: rgba(17, 24, 39, 0.8);
-  backdrop-filter: blur(10px);
-  border-radius: 12px;
+  background: rgba(17, 24, 39, 0.9);
+  backdrop-filter: blur(16px);
+  border-radius: 16px;
   overflow: hidden;
   border: 1px solid rgba(75, 85, 99, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
 .custom-table th {
-  background: rgba(31, 41, 55, 0.8);
-  backdrop-filter: blur(10px);
-  color: #9ca3af;
+  background: rgba(31, 41, 55, 0.9);
+  backdrop-filter: blur(16px);
+  color: #d1d5db;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-size: 0.75rem;
-  padding: 1rem;
+  letter-spacing: 0.05em;
+  font-size: 0.875rem;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid rgba(75, 85, 99, 0.3);
 }
 
 .custom-table td {
-  padding: 1rem;
+  padding: 1.25rem 1.5rem;
   border-top: 1px solid rgba(75, 85, 99, 0.2);
   color: #e5e7eb;
+  font-size: 0.925rem;
+  line-height: 1.6;
 }
 
 .custom-table tbody tr:hover {
-  background: rgba(31, 41, 55, 0.3);
-  backdrop-filter: blur(10px);
+  background: rgba(31, 41, 55, 0.4);
+  backdrop-filter: blur(16px);
+  transition: background 0.2s ease;
 }
 
-/* Responsive design improvements */
+/* Card improvements with better spacing */
+.card-enhanced {
+  background: rgba(17, 24, 39, 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(75, 85, 99, 0.2);
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+.card-enhanced:hover {
+  border-color: rgba(59, 130, 246, 0.3);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+  transform: translateY(-2px);
+}
+
+/* Form improvements with consistent spacing */
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-label {
+  display: block;
+  font-weight: 500;
+  color: #d1d5db;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+  letter-spacing: 0.025em;
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  border: 1px solid rgba(75, 85, 99, 0.3);
+  border-radius: 0.75rem;
+  background: rgba(17, 24, 39, 0.6);
+  color: #e5e7eb;
+  font-size: 0.925rem;
+  transition: all 0.2s ease;
+  line-height: 1.5;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  background: rgba(17, 24, 39, 0.8);
+}
+
+.form-input::placeholder {
+  color: #9ca3af;
+}
+
+/* Enhanced responsive design */
 @media (max-width: 768px) {
   .mobile-responsive {
     padding: 1rem;
@@ -244,15 +386,72 @@ body {
   
   .video-grid {
     grid-template-columns: 1fr;
+    gap: 1rem;
   }
   
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+  
+  .custom-table th,
+  .custom-table td {
+    padding: 0.875rem 1rem;
+    font-size: 0.825rem;
+  }
+  
+  .btn-primary,
+  .btn-secondary,
+  .btn-danger {
+    padding: 0.625rem 1.25rem;
+    font-size: 0.875rem;
   }
 }
 
 @media (max-width: 640px) {
   .stats-grid {
     grid-template-columns: 1fr;
+    gap: 1rem;
   }
+  
+  .space-x-4 > * + * {
+    margin-left: 0;
+    margin-top: 0.5rem;
+  }
+  
+  .flex-responsive {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* Focus improvements for accessibility */
+*:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+button:focus,
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+/* Text selection improvements */
+::selection {
+  background: rgba(59, 130, 246, 0.3);
+  color: #ffffff;
+}
+
+/* Animation performance improvements */
+* {
+  will-change: auto;
+}
+
+.animate-performance {
+  will-change: transform, opacity;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }

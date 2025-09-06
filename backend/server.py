@@ -164,18 +164,35 @@ mock_db = {
     'recordings': []
 }
 
+# Mock result classes for database operations
+class MockInsertResult:
+    def __init__(self, inserted_id: str):
+        self.inserted_id = inserted_id
+        self.acknowledged = True
+
+class MockUpdateResult:
+    def __init__(self, matched_count: int, modified_count: int):
+        self.matched_count = matched_count
+        self.modified_count = modified_count
+        self.acknowledged = True
+
+class MockDeleteResult:
+    def __init__(self, deleted_count: int):
+        self.deleted_count = deleted_count
+        self.acknowledged = True
+
 # Database helper functions
 async def db_insert_one(collection_name: str, document: dict):
-    if MONGO_AVAILABLE:
+    if MONGO_AVAILABLE and db is not None:
         return await db[collection_name].insert_one(document)
     else:
         # Mock implementation
         document['_id'] = str(uuid.uuid4())
         mock_db[collection_name].append(document)
-        return type('MockResult', (), {'inserted_id': document['_id']})()
+        return MockInsertResult(document['_id'])
 
 async def db_find_one(collection_name: str, query: dict):
-    if MONGO_AVAILABLE:
+    if MONGO_AVAILABLE and db is not None:
         return await db[collection_name].find_one(query)
     else:
         # Mock implementation
@@ -184,8 +201,8 @@ async def db_find_one(collection_name: str, query: dict):
                 return doc
         return None
 
-async def db_find(collection_name: str, query: dict = None, limit: int = 1000):
-    if MONGO_AVAILABLE:
+async def db_find(collection_name: str, query: Optional[dict] = None, limit: int = 1000):
+    if MONGO_AVAILABLE and db is not None:
         cursor = db[collection_name].find(query or {})
         return await cursor.sort("timestamp", -1).limit(limit).to_list(limit)
     else:
@@ -196,7 +213,7 @@ async def db_find(collection_name: str, query: dict = None, limit: int = 1000):
         return sorted(results, key=lambda x: x.get('timestamp', ''), reverse=True)[:limit]
 
 async def db_update_one(collection_name: str, query: dict, update: dict):
-    if MONGO_AVAILABLE:
+    if MONGO_AVAILABLE and db is not None:
         return await db[collection_name].update_one(query, update)
     else:
         # Mock implementation
@@ -204,22 +221,22 @@ async def db_update_one(collection_name: str, query: dict, update: dict):
             if all(doc.get(k) == v for k, v in query.items()):
                 if '$set' in update:
                     doc.update(update['$set'])
-                return type('MockResult', (), {'matched_count': 1, 'modified_count': 1})()
-        return type('MockResult', (), {'matched_count': 0, 'modified_count': 0})()
+                return MockUpdateResult(1, 1)
+        return MockUpdateResult(0, 0)
 
 async def db_delete_one(collection_name: str, query: dict):
-    if MONGO_AVAILABLE:
+    if MONGO_AVAILABLE and db is not None:
         return await db[collection_name].delete_one(query)
     else:
         # Mock implementation
         for i, doc in enumerate(mock_db[collection_name]):
             if all(doc.get(k) == v for k, v in query.items()):
                 del mock_db[collection_name][i]
-                return type('MockResult', (), {'deleted_count': 1})()
-        return type('MockResult', (), {'deleted_count': 0})()
+                return MockDeleteResult(1)
+        return MockDeleteResult(0)
 
-async def db_count_documents(collection_name: str, query: dict = None):
-    if MONGO_AVAILABLE:
+async def db_count_documents(collection_name: str, query: Optional[dict] = None):
+    if MONGO_AVAILABLE and db is not None:
         return await db[collection_name].count_documents(query or {})
     else:
         # Mock implementation
@@ -481,7 +498,7 @@ def verify_password(password: str, hashed: str) -> bool:
 def create_access_token(data: dict) -> str:
     return jwt.encode(data, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
-def verify_token(token: str) -> dict:
+def verify_token(token: str) -> Optional[dict]:
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
         return payload
@@ -577,6 +594,9 @@ async def update_camera(camera_id: str, camera_data: CameraCreate, current_user:
         raise HTTPException(status_code=404, detail="Camera not found")
     
     updated_camera = await db_find_one('cameras', {"id": camera_id})
+    if updated_camera is None:
+        raise HTTPException(status_code=404, detail="Camera not found after update")
+    
     return Camera(**updated_camera)
 
 @api_router.delete("/cameras/{camera_id}")
@@ -805,21 +825,34 @@ async def websocket_endpoint(websocket: WebSocket):
             except WebSocketDisconnect:
                 break
             except Exception as e:
-                # Don't log normal disconnections as errors
-                if "1000" not in str(e) and "Component unmounting" not in str(e):
-                    logging.error(f"WebSocket frame error: {e}")
+                # Only log actual errors, not normal disconnections
+                error_str = str(e)
+                if ("1000" in error_str and "Component unmounting" in error_str) or \
+                   ("1001" in error_str and "going away" in error_str):
+                    # Normal disconnection - don't log at all
+                    break
+                elif "1000" in error_str or "1001" in error_str:
+                    # Normal close codes - don't log as errors
+                    break
                 else:
-                    logging.info(f"WebSocket closed normally: {e}")
-                await asyncio.sleep(1)  # Prevent tight error loop
+                    # Actual error - log as error
+                    logging.error(f"WebSocket frame error: {e}")
+                    await asyncio.sleep(1)  # Prevent tight error loop
                 
     except WebSocketDisconnect:
-        logging.info("WebSocket client disconnected")
+        # Normal disconnection - no logging needed
+        pass
     except Exception as e:
-        logging.error(f"WebSocket error: {e}")
+        # Only log unexpected errors
+        error_str = str(e)
+        if "1000" not in error_str and "1001" not in error_str and "Component unmounting" not in error_str and "going away" not in error_str:
+            logging.error(f"WebSocket unexpected error: {e}")
     finally:
         if websocket in websocket_connections:
             websocket_connections.remove(websocket)
-            logging.info(f"Removed WebSocket connection. Active connections: {len(websocket_connections)}")
+            # Only log when connection count changes significantly
+            if len(websocket_connections) == 0:
+                logging.info("All WebSocket connections closed")
 
 @api_router.get("/health")
 async def health_check():
