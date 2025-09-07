@@ -180,8 +180,8 @@ const LoginPage = () => {
           </CardHeader>
           
           {/* Form Section */}
-          <CardContent className="px-8 py-6">
-            <form onSubmit={handleSubmit} className="space-y-5">
+          <CardContent className="px-8 py-6 pb-8">
+            <form onSubmit={handleSubmit} className="space-y-5 pb-6">
               <div className="space-y-1.5">
                 <Label htmlFor="username" className="block text-sm font-medium text-gray-300 ml-1">
                      Username
@@ -234,13 +234,13 @@ const LoginPage = () => {
         
         {/* Demo Credentials - Separate Card */}
         <Card className="mt-6 bg-blue-500/10 backdrop-blur-md border-blue-500/30">
-          <CardContent className="p-6">
+          <CardContent className="p-6 pb-8">
             <h3 className="text-sm font-medium text-blue-200 text-center mb-4">Demo Credentials</h3>
             <div className="space-y-3">
               {demoUsers.map((user, index) => (
                 <div 
                   key={index} 
-                  className="flex items-center justify-between bg-blue-500/10 rounded-lg p-3 hover:bg-blue-500/20 transition-colors duration-200"
+                  className={`flex items-center justify-between bg-blue-500/10 rounded-lg p-3 hover:bg-blue-500/20 transition-colors duration-200 ${index === demoUsers.length - 1 ? '!mb-4' : ''}`}
                 >
                   <span className="text-sm text-blue-200 font-medium">
                     {user.username} / {user.password}
@@ -1519,10 +1519,7 @@ const Dashboard = () => {
                     <span className="text-gray-400">Authentication</span>
                     <span className="text-white font-medium">JWT Tokens</span>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-400">Real-time</span>
-                    <span className="text-white font-medium">WebSockets</span>
-                  </div>
+                  
                 </CardContent>
               </Card>
 
