@@ -42,102 +42,318 @@ body {
 
 /* ===== TAILWIND CUSTOM COMPONENTS ===== */
 @layer components {
-  .card-consistent {
-    @apply bg-gray-900 border border-gray-700 rounded-lg shadow-md p-4;
+  /* === CARD SYSTEM === */
+  .card-base {
+    @apply bg-gray-900 border border-gray-700 rounded-xl shadow-lg transition-all duration-200;
   }
   
-  .card-padded {
+  .card-padding {
+    @apply p-4;
+  }
+  
+  .card-padding-lg {
     @apply p-6;
   }
   
-  .card-large {
+  .card-padding-xl {
     @apply p-8;
   }
   
-  .kpi-card-layout {
-    @apply flex items-center justify-between min-h-[120px] p-6 bg-gray-900 border border-gray-700 rounded-lg shadow-md transition-all duration-200;
+  .card-standard {
+    @apply bg-gray-900 border border-gray-700 rounded-xl shadow-lg transition-all duration-200 p-6;
   }
   
-  .kpi-card-layout:hover {
-    @apply transform -translate-y-1 shadow-lg;
+  .card-hover {
+    @apply hover:transform hover:-translate-y-1 hover:shadow-xl hover:border-gray-600;
   }
   
-  .form-input-style {
-    @apply w-full px-4 py-3 rounded-lg border border-gray-600 bg-gray-800 text-white placeholder:text-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200;
+  /* === KPI CARD SYSTEM === */
+  .kpi-card {
+    @apply bg-gray-900 border border-gray-700 rounded-xl shadow-lg transition-all duration-200;
+    @apply flex items-center justify-between;
+    @apply min-h-[140px] p-6;
   }
   
-  .form-button-style {
-    @apply px-6 py-3 rounded-lg font-semibold transition-all duration-200 min-h-[44px] flex items-center justify-center;
+  .kpi-card:hover {
+    @apply transform -translate-y-1 shadow-xl;
   }
   
-  .text-title {
-    @apply text-3xl font-bold leading-tight mb-3;
+  .kpi-content {
+    @apply flex flex-col justify-center flex-1;
   }
   
-  .text-subtitle {
-    @apply text-lg font-medium text-gray-400 leading-relaxed;
+  .kpi-icon {
+    @apply p-4 rounded-xl flex items-center justify-center;
+    @apply flex-shrink-0 ml-4;
   }
   
-  .text-body {
-    @apply text-sm leading-relaxed text-gray-300;
+  .kpi-label {
+    @apply text-sm font-medium text-gray-400 mb-2;
   }
   
-  .no-text-overflow {
-    @apply overflow-hidden text-ellipsis whitespace-nowrap;
+  .kpi-value {
+    @apply text-4xl font-bold text-white mb-1;
   }
   
-  .transition-smooth {
-    @apply transition-all duration-200 ease-in-out;
+  .kpi-description {
+    @apply text-xs text-gray-500;
   }
   
-  .hover-lift:hover {
-    @apply transform -translate-y-1 shadow-lg;
+  /* === FORM SYSTEM === */
+  .form-input-standard {
+    @apply w-full px-4 py-3 rounded-xl border border-gray-600;
+    @apply bg-gray-800 text-white placeholder:text-gray-400;
+    @apply focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20;
+    @apply transition-all duration-200;
+    width: calc(100% - 2rem); /* Account for 16px left + 16px right margin */
+  }
+  
+  .form-label-standard {
+    @apply block text-sm font-medium text-gray-300 mb-2;
+  }
+  
+  .form-button-primary {
+    @apply px-6 py-3 rounded-xl font-semibold;
+    @apply bg-blue-600 hover:bg-blue-700 text-white;
+    @apply transition-all duration-200 min-h-[48px];
+    @apply flex items-center justify-center;
+    width: calc(100% - 2rem); /* Account for 16px left + 16px right margin */
+  }
+  
+  .form-button-secondary {
+    @apply px-6 py-3 rounded-xl font-semibold;
+    @apply bg-gray-700 hover:bg-gray-600 text-white;
+    @apply border border-gray-600 hover:border-gray-500;
+    @apply transition-all duration-200 min-h-[48px];
+    @apply flex items-center justify-center;
+  }
+  
+  /* === LAYOUT SYSTEM === */
+  .layout-container {
+    @apply p-8;
+  }
+  
+  .layout-grid {
+    @apply grid gap-4;
+  }
+  
+  .layout-grid-responsive {
+    @apply grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4;
+  }
+  
+  .layout-grid-kpi {
+    @apply grid-cols-1 md:grid-cols-2 lg:grid-cols-4;
+  }
+  
+  .layout-grid-cards {
+    @apply grid-cols-1 md:grid-cols-2 lg:grid-cols-3;
+  }
+  
+  .layout-spacing {
+    @apply space-y-4;
+  }
+  
+  .layout-spacing-lg {
+    @apply space-y-6;
+  }
+  
+  .layout-spacing-xl {
+    @apply space-y-8;
+  }
+  
+  /* === UTILITY CLASSES === */
+  .hover-lift {
+    @apply hover:transform hover:-translate-y-1 hover:shadow-xl;
   }
   
   .grid-consistent {
-    @apply grid gap-4;
+    @apply grid gap-6;
   }
   
   .grid-cards {
     @apply grid-cols-1 md:grid-cols-2 lg:grid-cols-3;
   }
   
-  .grid-kpi {
-    @apply grid-cols-1 md:grid-cols-2 lg:grid-cols-4;
+  /* === TYPOGRAPHY SYSTEM === */
+  .text-heading-lg {
+    @apply text-3xl font-bold;
   }
   
-  .spacing-stack > * + * {
-    @apply mt-4;
+  .text-heading-md {
+    @apply text-2xl font-semibold;
+  }
+  
+  .text-heading-sm {
+    @apply text-xl font-semibold;
+  }
+  
+  .text-subtitle {
+    @apply text-lg text-gray-400;
+  }
+  
+  .text-body {
+    @apply text-base text-gray-300;
+  }
+  
+  .text-body-sm {
+    @apply text-sm text-gray-400;
+  }
+  
+  .text-caption {
+    @apply text-xs text-gray-500;
+  }
+  
+  /* === FLEXBOX UTILITIES === */
+  .flex-between {
+    @apply flex items-center justify-between;
+  }
+  
+  .flex-start {
+    @apply flex items-center;
+  }
+  
+  .flex-center {
+    @apply flex items-center justify-center;
+  }
+  
+  /* === UTILITY CLASSES === */
+  .no-text-overflow {
+    @apply truncate;
+  }
+  
+  .transition-smooth {
+    @apply transition-all duration-200;
+  }
+  
+  /* === LOGIN PAGE SPECIFIC === */
+  .login-container {
+    @apply min-h-screen bg-gray-950 flex items-center justify-center p-4;
+  }
+  
+  .login-card {
+    @apply w-full max-w-md bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl p-8;
+  }
+  
+  .login-header {
+    @apply text-center mb-8;
+  }
+  
+  .login-title {
+    @apply text-3xl font-bold text-white mb-2;
+  }
+  
+  .login-subtitle {
+    @apply text-gray-400;
+  }
+  
+  .login-form {
+    @apply space-y-6;
+  }
+  
+  .login-demo {
+    @apply mt-6 p-4 bg-gray-800/50 rounded-xl border border-gray-700;
+  }
+  
+  /* === TYPOGRAPHY SYSTEM === */
+  .text-heading-xl {
+    @apply text-4xl font-bold text-white mb-4;
+  }
+  
+  .text-heading-lg {
+    @apply text-3xl font-bold text-white mb-3;
+  }
+  
+  .text-heading-md {
+    @apply text-2xl font-semibold text-white mb-2;
+  }
+  
+  .text-heading-sm {
+    @apply text-xl font-semibold text-white mb-2;
+  }
+  
+  .text-subtitle {
+    @apply text-lg font-medium text-gray-400;
+  }
+  
+  .text-body {
+    @apply text-base text-gray-300;
+  }
+  
+  .text-body-sm {
+    @apply text-sm text-gray-300;
+  }
+  
+  .text-caption {
+    @apply text-xs text-gray-500;
+  }
+  
+  /* === UTILITY CLASSES === */
+  .transition-smooth {
+    @apply transition-all duration-200 ease-in-out;
+  }
+  
+  .hover-lift {
+    @apply hover:transform hover:-translate-y-1 hover:shadow-xl;
+  }
+  
+  .text-truncate {
+    @apply overflow-hidden text-ellipsis whitespace-nowrap;
+  }
+  
+  .center-content {
+    @apply flex items-center justify-center;
+  }
+  
+  .flex-between {
+    @apply flex items-center justify-between;
+  }
+  
+  .flex-start {
+    @apply flex items-center justify-start;
   }
 }
 
 /* ===== RESPONSIVE BREAKPOINTS ===== */
 @media (max-width: 640px) {
-  .card-consistent {
-    @apply p-3;
-  }
-  
-  .card-padded {
+  .layout-container {
     @apply p-4;
   }
   
-  .grid-consistent {
+  .card-padding-lg {
+    @apply p-4;
+  }
+  
+  .layout-grid {
     @apply gap-3;
   }
   
-  .kpi-card-layout {
-    @apply min-h-[100px] p-4;
+  .kpi-card {
+    @apply min-h-[120px] p-4;
+  }
+  
+  .kpi-value {
+    @apply text-3xl;
+  }
+  
+  .layout-grid-kpi {
+    @apply grid-cols-1;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 768px) {
+  .layout-grid-kpi {
+    @apply grid-cols-2;
   }
 }
 
 @media (min-width: 768px) {
-  .grid-consistent {
+  .layout-grid {
     @apply gap-4;
   }
 }
 
 @media (min-width: 1024px) {
-  .grid-consistent {
+  .layout-grid {
     @apply gap-6;
   }
 }
@@ -155,7 +371,7 @@ button,
 
 /* High contrast mode support */
 @media (prefers-contrast: high) {
-  .card-consistent {
+  .card-base {
     @apply border-2;
   }
 }

@@ -160,30 +160,30 @@ const LoginPage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 center-content p-4">
       <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8ZGVmcz4KICAgIDxwYXR0ZXJuIGlkPSJncmlkIiB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiPgogICAgICA8cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDUpIiBzdHJva2Utd2lkdGg9IjEiLz4KICAgIDwvcGF0dGVybj4KICA8L2RlZnM+CiAgPHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNncmlkKSIgLz4KPC9zdmc+')] opacity-30"></div>
       
       {/* Centered Login Container */}
-      <div className="w-full max-w-md">
-        <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl rounded-2xl overflow-hidden">
+      <div className="w-full max-w-md relative z-10">
+        <Card className="card-standard bg-white/10 backdrop-blur-md border-white/20 shadow-xl overflow-hidden">
           {/* Header Section */}
-          <CardHeader className="text-center space-y-4 pt-8 pb-6 px-8">
-            <div className="flex items-center justify-center mb-4">
+          <CardHeader className="text-center layout-spacing pt-8 pb-6 px-8">
+            <div className="center-content mb-4">
               <div className="bg-blue-500/20 p-4 rounded-2xl border border-blue-500/30">
                 <Shield className="h-8 w-8 text-blue-400" />
               </div>
             </div>
-            <CardTitle className="text-title text-white">Railway VSS</CardTitle>
+            <CardTitle className="text-heading-lg text-white">Railway VSS</CardTitle>
             <CardDescription className="text-subtitle text-gray-300">
               Video Surveillance System Login
             </CardDescription>
           </CardHeader>
           
           {/* Form Section */}
-          <CardContent className="form-container">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="form-group">
-                <Label htmlFor="username" className="form-label">
+          <CardContent className="card-padding-xl">
+            <form onSubmit={handleSubmit} className="layout-spacing">
+              <div className="space-y-2">
+                <Label htmlFor="username" className="form-label-standard ml-4">
                   Username
                 </Label>
                 <Input
@@ -191,14 +191,14 @@ const LoginPage = () => {
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="form-input h-12 text-base"
+                  className="form-input-standard ml-4 mr-4"
                   placeholder="Enter username"
                   required
                 />
               </div>
               
-              <div className="form-group">
-                <Label htmlFor="password" className="form-label">
+              <div className="space-y-2">
+                <Label htmlFor="password" className="form-label-standard ml-4">
                   Password
                 </Label>
                 <Input
@@ -206,41 +206,43 @@ const LoginPage = () => {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="form-input h-12 text-base"
+                  className="form-input-standard ml-4 mr-4"
                   placeholder="Enter password"
                   required
                 />
               </div>
               
-              <Button 
-                type="submit" 
-                className="w-full px-6 py-3 rounded-lg font-semibold transition-all duration-200 min-h-[44px] flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white h-12"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <div className="flex items-center justify-center">
-                    <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
-                    Signing In...
-                  </div>
-                ) : (
-                  'Sign In'
-                )}
-              </Button>
+              <div className="pt-2">
+                <Button 
+                  type="submit" 
+                  className="form-button-primary ml-4 mr-4"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <div className="center-content">
+                      <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
+                      Signing In...
+                    </div>
+                  ) : (
+                    'Sign In'
+                  )}
+                </Button>
+              </div>
             </form>
           </CardContent>
         </Card>
         
         {/* Demo Credentials - Separate Card */}
-        <Card className="mt-4 bg-blue-500/10 backdrop-blur-md border-blue-500/30 rounded-2xl">
-          <CardContent className="p-6">
-            <h3 className="text-blue-200 font-semibold mb-4 text-center">Demo Credentials</h3>
-            <div className="space-y-3">
+        <Card className="mt-6 card-standard bg-blue-500/10 backdrop-blur-md border-blue-500/30">
+          <CardContent className="card-padding-lg">
+            <h3 className="text-heading-sm text-blue-200 text-center ml-4 mb-4">Demo Credentials</h3>
+            <div className="layout-spacing">
               {demoUsers.map((user, index) => (
-                <div key={index} className="flex justify-between items-center bg-blue-500/10 rounded-lg p-3">
-                  <span className="text-blue-200 font-medium text-sm">
+                <div key={index} className="flex-between bg-blue-500/10 rounded-xl p-4 ml-4 mr-4">
+                  <span className="text-body text-blue-200 font-medium ml-4">
                     {user.username} / {user.password}
                   </span>
-                  <span className="text-blue-300 font-medium text-xs">
+                  <span className="text-caption text-blue-300 font-medium mr-4">
                     ({user.role})
                   </span>
                 </div>
@@ -909,51 +911,51 @@ const Dashboard = () => {
       </header>
 
       {/* Standardized KPI Stats Cards */}
-      <div className="p-8">
-        <div className="grid-consistent grid-kpi mb-8">
-          <Card className="kpi-card-layout hover-lift border-gray-700 hover:border-blue-500/50">
-            <div className="flex flex-col justify-center gap-2">
-              <div className="text-sm font-semibold text-gray-400 mb-2">Total Cameras</div>
-              <div className="text-4xl font-bold text-white mb-1">{stats.total_cameras || 0}</div>
-              <div className="text-xs text-gray-500">System capacity</div>
+      <div className="layout-container">
+        <div className="layout-grid layout-grid-kpi mb-8">
+          <div className="kpi-card hover-lift border-gray-700 hover:border-blue-500/50">
+            <div className="kpi-content">
+              <div className="kpi-label">Total Cameras</div>
+              <div className="kpi-value">{stats.total_cameras || 0}</div>
+              <div className="kpi-description">System capacity</div>
             </div>
-            <div className="p-3 bg-blue-500/20 rounded-xl flex items-center justify-center">
+            <div className="kpi-icon bg-blue-500/20">
               <Camera className="h-8 w-8 text-blue-400" />
             </div>
-          </Card>
+          </div>
 
-          <Card className="kpi-card-layout hover-lift border-gray-700 hover:border-green-500/50">
-            <div className="flex flex-col justify-center gap-2">
-              <div className="text-sm font-semibold text-gray-400 mb-2">Active Cameras</div>
-              <div className="text-4xl font-bold text-green-400 mb-1">{stats.active_cameras || 0}</div>
-              <div className="text-xs text-gray-500">Currently monitoring</div>
+          <div className="kpi-card hover-lift border-gray-700 hover:border-green-500/50">
+            <div className="kpi-content">
+              <div className="kpi-label">Active Cameras</div>
+              <div className="kpi-value text-green-400">{stats.active_cameras || 0}</div>
+              <div className="kpi-description">Currently monitoring</div>
             </div>
-            <div className="p-3 bg-green-500/20 rounded-xl flex items-center justify-center">
+            <div className="kpi-icon bg-green-500/20">
               <Monitor className="h-8 w-8 text-green-400" />
             </div>
-          </Card>
+          </div>
 
-          <Card className="kpi-card-layout hover-lift border-gray-700 hover:border-yellow-500/50">
-            <div className="flex flex-col justify-center gap-2">
-              <div className="text-sm font-semibold text-gray-400 mb-2">Today's Events</div>
-              <div className="text-4xl font-bold text-yellow-400 mb-1">{stats.today_events || 0}</div>
-              <div className="text-xs text-gray-500">Security incidents</div>
+          <div className="kpi-card hover-lift border-gray-700 hover:border-yellow-500/50">
+            <div className="kpi-content">
+              <div className="kpi-label">Today's Events</div>
+              <div className="kpi-value text-yellow-400">{stats.today_events || 0}</div>
+              <div className="kpi-description">Security incidents</div>
             </div>
-            <div className="p-3 bg-yellow-500/20 rounded-xl flex items-center justify-center">
+            <div className="kpi-icon bg-yellow-500/20">
               <TrendingUp className="h-8 w-8 text-yellow-400" />
             </div>
-          </Card>
+          </div>
 
-          <Card className="kpi-card-layout hover-lift border-gray-700 hover:border-red-500/50">
-            <div className="flex flex-col justify-center gap-2">
-              <div className="text-sm font-semibold text-gray-400 mb-2">Unacknowledged</div>
-              <div className="text-4xl font-bold text-red-400 mb-1">{stats.unacknowledged_events || 0}</div>
-              <div className="text-xs text-gray-500">Require attention</div>
+          <div className="kpi-card hover-lift border-gray-700 hover:border-red-500/50">
+            <div className="kpi-content">
+              <div className="kpi-label">Unacknowledged</div>
+              <div className="kpi-value text-red-400">{stats.unacknowledged_events || 0}</div>
+              <div className="kpi-description">Require attention</div>
             </div>
-            <div className="p-3 bg-red-500/20 rounded-xl flex items-center justify-center">
+            <div className="kpi-icon bg-red-500/20">
               <AlertCircle className="h-8 w-8 text-red-400" />
             </div>
-          </Card>
+          </div>
         </div>
 
         {/* Main Content with Enhanced Tabs */}
@@ -1322,48 +1324,49 @@ const Dashboard = () => {
             )}
           </TabsContent>
 
-          <TabsContent value="settings" className="space-y-6">
-            <div className="flex justify-between items-center flex-wrap gap-4 mb-6">
+          <TabsContent value="settings" className="layout-spacing-lg">
+            <div className="flex-between flex-wrap gap-4 mb-6">
               <div>
-                <h2 className="text-title text-white">System Settings</h2>
+                <h2 className="text-heading-lg text-white">System Settings</h2>
                 <p className="text-subtitle">System configuration and user management</p>
               </div>
             </div>
 
-            <div className="grid-consistent grid-cards">
-              {/* User Profile Card */}
-              <Card className="p-6 bg-gray-900 border-gray-700 rounded-lg shadow-md hover:transform hover:-translate-y-1 hover:shadow-lg transition-all duration-200">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-white flex items-center text-lg">
+            <div className="layout-container">
+              <div className="layout-grid layout-grid-responsive">
+                {/* User Profile Card */}
+                <div className="card-standard card-hover">
+                  <div className="flex-start mb-4">
                     <Users className="h-5 w-5 mr-3 text-blue-400" />
-                    User Profile
-                  </CardTitle>
-                  <CardDescription className="text-gray-400">Manage your account settings</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4 p-0">
-                  <div className="flex items-center justify-between py-3">
-                    <span className="text-gray-400 font-medium">Username</span>
-                    <span className="text-white font-semibold">{user?.username}</span>
+                    <div>
+                      <h3 className="text-heading-sm text-white">User Profile</h3>
+                      <p className="text-body-sm text-gray-400">Manage your account settings</p>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between py-3 border-t border-gray-700">
-                    <span className="text-gray-400 font-medium">Email</span>
-                    <span className="text-white font-semibold">{user?.email}</span>
+                  <div className="layout-spacing">
+                    <div className="flex-between py-3">
+                      <span className="text-body text-gray-400 font-medium">Username</span>
+                      <span className="text-body text-white font-semibold">{user?.username}</span>
+                    </div>
+                    <div className="flex-between py-3 border-t border-gray-700">
+                      <span className="text-body text-gray-400 font-medium">Email</span>
+                      <span className="text-body text-white font-semibold">{user?.email}</span>
+                    </div>
+                    <div className="flex-between py-3 border-t border-gray-700">
+                      <span className="text-body text-gray-400 font-medium">Role</span>
+                      <Badge variant="secondary" className="bg-blue-500/20 text-blue-400 px-3 py-1 font-medium">
+                        {user?.role?.replace('_', ' ').toUpperCase()}
+                      </Badge>
+                    </div>
+                    <div className="flex-between py-3 border-t border-gray-700">
+                      <span className="text-body text-gray-400 font-medium">Status</span>
+                      <Badge variant="default" className="bg-green-500/20 text-green-400 px-3 py-1 font-medium">
+                        <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
+                        Active
+                      </Badge>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between py-3 border-t border-gray-700">
-                    <span className="text-gray-400 font-medium">Role</span>
-                    <Badge variant="secondary" className="bg-blue-500/20 text-blue-400 px-3 py-1 font-medium">
-                      {user?.role?.replace('_', ' ').toUpperCase()}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between py-3 border-t border-gray-700">
-                    <span className="text-gray-400 font-medium">Status</span>
-                    <Badge variant="default" className="bg-green-500/20 text-green-400 px-3 py-1 font-medium">
-                      <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
-                      Active
-                    </Badge>
-                  </div>
-                </CardContent>
-              </Card>
+                </div>
               
               {/* System Status Card */}
               <Card className="bg-gray-900 border-gray-700 shadow-xl hover:border-gray-600 transition-all duration-300">
@@ -1588,6 +1591,7 @@ const Dashboard = () => {
                   )}
                 </CardContent>
               </Card>
+            </div>
             </div>
           </TabsContent>
         </Tabs>
