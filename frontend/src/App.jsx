@@ -163,75 +163,92 @@ const LoginPage = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8ZGVmcz4KICAgIDxwYXR0ZXJuIGlkPSJncmlkIiB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiPgogICAgICA8cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDUpIiBzdHJva2Utd2lkdGg9IjEiLz4KICAgIDwvcGF0dGVybj4KICA8L2RlZnM+CiAgPHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNncmlkKSIgLz4KPC9zdmc+')] opacity-30"></div>
       
-      <Card className="w-full max-w-md bg-white/10 backdrop-blur-md border-white/20 shadow-2xl">
-        <CardHeader className="space-y-1 text-center pb-6">
-          <div className="flex items-center justify-center mb-6">
-            <div className="bg-blue-500/20 p-4 rounded-2xl border border-blue-500/30">
-              <Shield className="h-8 w-8 text-blue-400" />
+      {/* Centered Login Container */}
+      <div className="w-full max-w-md">
+        <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl rounded-2xl overflow-hidden">
+          {/* Header Section */}
+          <CardHeader className="text-center space-y-4 pt-8 pb-6 px-8">
+            <div className="flex items-center justify-center mb-4">
+              <div className="bg-blue-500/20 p-4 rounded-2xl border border-blue-500/30">
+                <Shield className="h-8 w-8 text-blue-400" />
+              </div>
             </div>
-          </div>
-          <CardTitle className="text-2xl font-bold text-white mb-2">Railway VSS</CardTitle>
-          <CardDescription className="text-gray-300 text-base">
-            Video Surveillance System Login
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-2">
-              <Label htmlFor="username" className="text-gray-200 font-medium">Username</Label>
-              <Input
-                id="username"
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="bg-white/10 border-white/20 text-white placeholder:text-gray-400 h-12 px-4 focus:border-blue-400 focus:ring-blue-400"
-                placeholder="Enter username"
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-gray-200 font-medium">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="bg-white/10 border-white/20 text-white placeholder:text-gray-400 h-12 px-4 focus:border-blue-400 focus:ring-blue-400"
-                placeholder="Enter password"
-                required
-              />
-            </div>
-            <Button 
-              type="submit" 
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white transition-all duration-200 h-12 font-semibold text-base"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <div className="flex items-center">
-                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                  Signing In...
-                </div>
-              ) : (
-                'Sign In'
-              )}
-            </Button>
-          </form>
+            <CardTitle className="text-title text-white">Railway VSS</CardTitle>
+            <CardDescription className="text-subtitle text-gray-300">
+              Video Surveillance System Login
+            </CardDescription>
+          </CardHeader>
           
-          <div className="mt-6 p-4 bg-blue-500/20 rounded-xl border border-blue-500/30">
-            <p className="text-sm text-blue-200 mb-3 font-semibold">
-              Demo Credentials:
-            </p>
-            <div className="space-y-2">
+          {/* Form Section */}
+          <CardContent className="form-container">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="form-group">
+                <Label htmlFor="username" className="form-label">
+                  Username
+                </Label>
+                <Input
+                  id="username"
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="form-input h-12 text-base"
+                  placeholder="Enter username"
+                  required
+                />
+              </div>
+              
+              <div className="form-group">
+                <Label htmlFor="password" className="form-label">
+                  Password
+                </Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="form-input h-12 text-base"
+                  placeholder="Enter password"
+                  required
+                />
+              </div>
+              
+              <Button 
+                type="submit" 
+                className="w-full px-6 py-3 rounded-lg font-semibold transition-all duration-200 min-h-[44px] flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white h-12"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <div className="flex items-center justify-center">
+                    <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
+                    Signing In...
+                  </div>
+                ) : (
+                  'Sign In'
+                )}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+        
+        {/* Demo Credentials - Separate Card */}
+        <Card className="mt-4 bg-blue-500/10 backdrop-blur-md border-blue-500/30 rounded-2xl">
+          <CardContent className="p-6">
+            <h3 className="text-blue-200 font-semibold mb-4 text-center">Demo Credentials</h3>
+            <div className="space-y-3">
               {demoUsers.map((user, index) => (
-                <div key={index} className="flex justify-between items-center text-xs bg-blue-500/10 rounded-lg px-3 py-2">
-                  <span className="text-blue-200 font-medium">{user.username} / {user.password}</span>
-                  <span className="text-blue-300 font-medium">({user.role})</span>
+                <div key={index} className="flex justify-between items-center bg-blue-500/10 rounded-lg p-3">
+                  <span className="text-blue-200 font-medium text-sm">
+                    {user.username} / {user.password}
+                  </span>
+                  <span className="text-blue-300 font-medium text-xs">
+                    ({user.role})
+                  </span>
                 </div>
               ))}
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
@@ -291,17 +308,21 @@ const VideoFeed = ({ camera, isActive, onStart, onStop, onDelete, onEdit }) => {
   };
 
   return (
-    <Card className="bg-gray-900 border-gray-700 hover:border-gray-600 transition-all duration-300 shadow-xl">
+    <Card className="p-6 hover-lift bg-gray-900 border-gray-700 hover:border-gray-600 rounded-lg shadow-md">
       <CardHeader className="pb-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-4">
           <div className="flex-1 min-w-0">
             <CardTitle className="text-white text-lg flex items-center mb-2">
-              <span className="truncate">{camera.name}</span>
-              {mockMode && <Badge variant="secondary" className="ml-3 text-xs bg-blue-500/20 text-blue-400">DEMO</Badge>}
+              <span className="no-text-overflow">{camera.name}</span>
+              {mockMode && (
+                <Badge variant="secondary" className="ml-3 text-xs bg-blue-500/20 text-blue-400 px-2 py-1">
+                  DEMO
+                </Badge>
+              )}
             </CardTitle>
             <CardDescription className="text-gray-400 flex items-center mb-1">
               <MapPin className="h-4 w-4 mr-2 flex-shrink-0" />
-              <span className="truncate">{camera.location}</span>
+              <span className="no-text-overflow">{camera.location}</span>
             </CardDescription>
             {camera.gps_lat !== 0 && camera.gps_lng !== 0 && (
               <CardDescription className="text-gray-500 text-xs">
@@ -309,17 +330,19 @@ const VideoFeed = ({ camera, isActive, onStart, onStop, onDelete, onEdit }) => {
               </CardDescription>
             )}
           </div>
-          <div className="flex items-center space-x-3 ml-4">
+          
+          <div className="flex items-center gap-3">
             <Badge 
               variant={isActive ? "default" : "secondary"} 
-              className={`${getStatusColor()} text-white px-3 py-1.5 text-xs font-semibold`}
+              className={`${getStatusColor()} text-white px-3 py-1 text-xs font-semibold`}
             >
               <div className="flex items-center">
                 <div className={`w-2 h-2 rounded-full mr-2 ${isActive ? 'animate-pulse' : ''}`}></div>
                 {getStatusText()}
               </div>
             </Badge>
-            <div className="flex space-x-2">
+            
+            <div className="flex gap-2">
               {isActive ? (
                 <Button 
                   size="sm" 
@@ -330,7 +353,7 @@ const VideoFeed = ({ camera, isActive, onStart, onStop, onDelete, onEdit }) => {
                     setIsLoading(false);
                   }}
                   disabled={isLoading}
-                  className="h-9 px-3 bg-red-600 hover:bg-red-700 transition-all duration-200"
+                  className="h-9 w-9 p-0 bg-red-600 hover:bg-red-700 transition-smooth"
                 >
                   {isLoading ? (
                     <RefreshCw className="h-4 w-4 animate-spin" />
@@ -348,7 +371,7 @@ const VideoFeed = ({ camera, isActive, onStart, onStop, onDelete, onEdit }) => {
                     setIsLoading(false);
                   }}
                   disabled={isLoading}
-                  className="h-9 px-3 bg-green-600 hover:bg-green-700 transition-all duration-200"
+                  className="h-9 w-9 p-0 bg-green-600 hover:bg-green-700 transition-smooth"
                 >
                   {isLoading ? (
                     <RefreshCw className="h-4 w-4 animate-spin" />
@@ -362,7 +385,7 @@ const VideoFeed = ({ camera, isActive, onStart, onStop, onDelete, onEdit }) => {
                 variant="outline" 
                 onClick={() => onEdit(camera)} 
                 disabled={isLoading}
-                className="h-9 px-3 border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white transition-all duration-200"
+                className="h-9 w-9 p-0 border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white transition-smooth"
               >
                 <Edit className="h-4 w-4" />
               </Button>
@@ -371,7 +394,7 @@ const VideoFeed = ({ camera, isActive, onStart, onStop, onDelete, onEdit }) => {
                 variant="destructive" 
                 onClick={() => onDelete(camera.id)} 
                 disabled={isLoading}
-                className="h-9 px-3 bg-red-600 hover:bg-red-700 transition-all duration-200"
+                className="h-9 w-9 p-0 bg-red-600 hover:bg-red-700 transition-smooth"
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
@@ -379,7 +402,8 @@ const VideoFeed = ({ camera, isActive, onStart, onStop, onDelete, onEdit }) => {
           </div>
         </div>
       </CardHeader>
-      <CardContent>
+      
+      <CardContent className="p-0">
         <div className="relative bg-black rounded-lg overflow-hidden aspect-video mb-4">
           <canvas
             ref={canvasRef}
@@ -404,14 +428,21 @@ const VideoFeed = ({ camera, isActive, onStart, onStop, onDelete, onEdit }) => {
             </div>
           )}
         </div>
-        <div className="flex items-center justify-between text-sm text-gray-400 bg-gray-800/50 rounded-lg px-3 py-2">
-          <span className="font-medium">Source: <span className="text-gray-300">{camera.source}</span></span>
-          <div className="flex items-center space-x-3">
+        
+        <div className="flex items-center justify-between text-sm text-gray-400 bg-gray-800/50 rounded-lg p-3">
+          <span className="font-medium">
+            Source: <span className="text-gray-300">{camera.source}</span>
+          </span>
+          <div className="flex items-center gap-3">
             {isActive && frameCount > 0 && (
-              <span className="text-xs">Frames: <span className="text-white font-medium">{frameCount}</span></span>
+              <span className="text-xs">
+                Frames: <span className="text-white font-medium">{frameCount}</span>
+              </span>
             )}
             {mockMode && (
-              <Badge variant="secondary" className="text-xs bg-blue-500/20 text-blue-400">DEMO</Badge>
+              <Badge variant="secondary" className="text-xs bg-blue-500/20 text-blue-400 px-2 py-1">
+                DEMO
+              </Badge>
             )}
           </div>
         </div>
@@ -844,123 +875,107 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gray-950">
       {/* Enhanced Header */}
-      <header className="bg-gray-900 border-b border-gray-800 px-6 py-5 shadow-lg">
+      <header className="bg-gray-900 border-b border-gray-800 px-8 py-6 shadow-lg">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className="bg-blue-500/20 p-3 rounded-xl border border-blue-500/30">
-              <Shield className="h-6 w-6 text-blue-400" />
+          <div className="flex items-center space-x-6">
+            <div className="bg-blue-500/20 p-4 rounded-xl border border-blue-500/30">
+              <Shield className="h-7 w-7 text-blue-400" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-white mb-1">Railway Video Surveillance System</h1>
-              <p className="text-sm text-gray-400">Real-time monitoring and security</p>
+              <h1 className="text-2xl font-bold text-white mb-2">Railway Video Surveillance System</h1>
+              <p className="text-base text-gray-400">Real-time monitoring and security</p>
             </div>
           </div>
-          <div className="flex items-center space-x-6">
-            <div className="flex items-center space-x-3 px-3 py-2 bg-gray-800/50 rounded-lg border border-gray-700">
+          <div className="flex items-center space-x-8">
+            <div className="flex items-center space-x-4 px-4 py-3 bg-gray-800/50 rounded-xl border border-gray-700">
               {getConnectionStatusIcon()}
-              <span className="capitalize text-sm font-medium text-gray-300">{connectionStatus}</span>
+              <span className="capitalize text-base font-medium text-gray-300">{connectionStatus}</span>
             </div>
-            <Badge variant="secondary" className="bg-green-500/20 text-green-400 px-3 py-1.5 text-sm font-medium">
+            <Badge variant="secondary" className="bg-green-500/20 text-green-400 px-4 py-2 text-base font-medium">
               {user?.role?.replace('_', ' ').toUpperCase()}
             </Badge>
-            <span className="text-gray-300 font-medium">{user?.username}</span>
+            <span className="text-gray-300 font-semibold text-base">{user?.username}</span>
             <Button 
               variant="outline" 
               size="sm" 
               onClick={handleLogout} 
-              className="border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white transition-all duration-200 px-4 py-2"
+              className="border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white transition-all duration-200 px-5 py-3 text-base"
             >
-              <LogOut className="h-4 w-4 mr-2" />
+              <LogOut className="h-5 w-5 mr-3" />
               Logout
             </Button>
           </div>
         </div>
       </header>
 
-      {/* Enhanced Stats Cards */}
-      <div className="p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="bg-gray-900 border-gray-700 hover:border-blue-500/50 transition-all duration-300 shadow-xl">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-400 mb-2">Total Cameras</p>
-                  <p className="text-3xl font-bold text-white mb-1">{stats.total_cameras || 0}</p>
-                  <p className="text-xs text-gray-500">System capacity</p>
-                </div>
-                <div className="bg-blue-500/20 p-3 rounded-xl">
-                  <Camera className="h-8 w-8 text-blue-400" />
-                </div>
-              </div>
-            </CardContent>
+      {/* Standardized KPI Stats Cards */}
+      <div className="p-8">
+        <div className="grid-consistent grid-kpi mb-8">
+          <Card className="kpi-card-layout hover-lift border-gray-700 hover:border-blue-500/50">
+            <div className="flex flex-col justify-center gap-2">
+              <div className="text-sm font-semibold text-gray-400 mb-2">Total Cameras</div>
+              <div className="text-4xl font-bold text-white mb-1">{stats.total_cameras || 0}</div>
+              <div className="text-xs text-gray-500">System capacity</div>
+            </div>
+            <div className="p-3 bg-blue-500/20 rounded-xl flex items-center justify-center">
+              <Camera className="h-8 w-8 text-blue-400" />
+            </div>
           </Card>
 
-          <Card className="bg-gray-900 border-gray-700 hover:border-green-500/50 transition-all duration-300 shadow-xl">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-400 mb-2">Active Cameras</p>
-                  <p className="text-3xl font-bold text-green-400 mb-1">{stats.active_cameras || 0}</p>
-                  <p className="text-xs text-gray-500">Currently monitoring</p>
-                </div>
-                <div className="bg-green-500/20 p-3 rounded-xl">
-                  <Monitor className="h-8 w-8 text-green-400" />
-                </div>
-              </div>
-            </CardContent>
+          <Card className="kpi-card-layout hover-lift border-gray-700 hover:border-green-500/50">
+            <div className="flex flex-col justify-center gap-2">
+              <div className="text-sm font-semibold text-gray-400 mb-2">Active Cameras</div>
+              <div className="text-4xl font-bold text-green-400 mb-1">{stats.active_cameras || 0}</div>
+              <div className="text-xs text-gray-500">Currently monitoring</div>
+            </div>
+            <div className="p-3 bg-green-500/20 rounded-xl flex items-center justify-center">
+              <Monitor className="h-8 w-8 text-green-400" />
+            </div>
           </Card>
 
-          <Card className="bg-gray-900 border-gray-700 hover:border-yellow-500/50 transition-all duration-300 shadow-xl">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-400 mb-2">Today's Events</p>
-                  <p className="text-3xl font-bold text-yellow-400 mb-1">{stats.today_events || 0}</p>
-                  <p className="text-xs text-gray-500">Security incidents</p>
-                </div>
-                <div className="bg-yellow-500/20 p-3 rounded-xl">
-                  <TrendingUp className="h-8 w-8 text-yellow-400" />
-                </div>
-              </div>
-            </CardContent>
+          <Card className="kpi-card-layout hover-lift border-gray-700 hover:border-yellow-500/50">
+            <div className="flex flex-col justify-center gap-2">
+              <div className="text-sm font-semibold text-gray-400 mb-2">Today's Events</div>
+              <div className="text-4xl font-bold text-yellow-400 mb-1">{stats.today_events || 0}</div>
+              <div className="text-xs text-gray-500">Security incidents</div>
+            </div>
+            <div className="p-3 bg-yellow-500/20 rounded-xl flex items-center justify-center">
+              <TrendingUp className="h-8 w-8 text-yellow-400" />
+            </div>
           </Card>
 
-          <Card className="bg-gray-900 border-gray-700 hover:border-red-500/50 transition-all duration-300 shadow-xl">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-400 mb-2">Unacknowledged</p>
-                  <p className="text-3xl font-bold text-red-400 mb-1">{stats.unacknowledged_events || 0}</p>
-                  <p className="text-xs text-gray-500">Require attention</p>
-                </div>
-                <div className="bg-red-500/20 p-3 rounded-xl">
-                  <AlertCircle className="h-8 w-8 text-red-400" />
-                </div>
-              </div>
-            </CardContent>
+          <Card className="kpi-card-layout hover-lift border-gray-700 hover:border-red-500/50">
+            <div className="flex flex-col justify-center gap-2">
+              <div className="text-sm font-semibold text-gray-400 mb-2">Unacknowledged</div>
+              <div className="text-4xl font-bold text-red-400 mb-1">{stats.unacknowledged_events || 0}</div>
+              <div className="text-xs text-gray-500">Require attention</div>
+            </div>
+            <div className="p-3 bg-red-500/20 rounded-xl flex items-center justify-center">
+              <AlertCircle className="h-8 w-8 text-red-400" />
+            </div>
           </Card>
         </div>
 
         {/* Main Content with Enhanced Tabs */}
-        <Tabs defaultValue="cameras" className="space-y-6">
+        <Tabs defaultValue="cameras" className="space-y-8">
           <TabsList className="bg-gray-900 border-gray-700 p-1 rounded-xl">
             <TabsTrigger 
               value="cameras" 
-              className="data-[state=active]:bg-blue-600 data-[state=active]:text-white transition-all duration-200 px-6 py-3 rounded-lg font-medium"
+              className="data-[state=active]:bg-blue-600 data-[state=active]:text-white transition-smooth px-6 py-3 rounded-lg font-semibold"
             >
               <Camera className="h-4 w-4 mr-2" />
               Live Cameras ({cameras.length})
             </TabsTrigger>
             <TabsTrigger 
               value="events" 
-              className="data-[state=active]:bg-blue-600 data-[state=active]:text-white transition-all duration-200 px-6 py-3 rounded-lg font-medium"
+              className="data-[state=active]:bg-blue-600 data-[state=active]:text-white transition-smooth px-6 py-3 rounded-lg font-semibold"
             >
               <AlertTriangle className="h-4 w-4 mr-2" />
               Events ({events.length})
             </TabsTrigger>
             <TabsTrigger 
               value="settings" 
-              className="data-[state=active]:bg-blue-600 data-[state=active]:text-white transition-all duration-200 px-6 py-3 rounded-lg font-medium"
+              className="data-[state=active]:bg-blue-600 data-[state=active]:text-white transition-smooth px-6 py-3 rounded-lg font-semibold"
             >
               <Settings className="h-4 w-4 mr-2" />
               Settings
@@ -970,10 +985,10 @@ const Dashboard = () => {
           <TabsContent value="cameras" className="space-y-6">
             <div className="flex justify-between items-center flex-wrap gap-4 mb-6">
               <div>
-                <h2 className="text-2xl font-bold text-white mb-2">Camera Management</h2>
-                <p className="text-gray-400">Monitor and control surveillance cameras</p>
+                <h2 className="text-title text-white">Camera Management</h2>
+                <p className="text-subtitle">Monitor and control surveillance cameras</p>
               </div>
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center gap-4">
                 <Select value={cameraFilter} onValueChange={setCameraFilter}>
                   <SelectTrigger className="w-40 bg-gray-800 border-gray-600 h-10">
                     <SelectValue />
@@ -986,7 +1001,7 @@ const Dashboard = () => {
                 </Select>
                 {user?.role === 'admin' && (
                   <Button 
-                    className="bg-blue-600 hover:bg-blue-700 transition-all duration-200 px-6 py-2.5 font-medium" 
+                    className="px-6 py-3 rounded-lg font-semibold transition-all duration-200 min-h-[44px] flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white" 
                     onClick={() => setIsAddCameraOpen(true)}
                   >
                     <Camera className="h-4 w-4 mr-2" />
@@ -997,15 +1012,17 @@ const Dashboard = () => {
             </div>
 
             {filteredCameras.length === 0 ? (
-              <Card className="bg-gray-900 border-gray-700 shadow-xl">
-                <CardContent className="p-12 text-center">
-                  <Camera className="h-16 w-16 text-gray-600 mx-auto mb-6" />
-                  <h3 className="text-xl font-semibold text-gray-400 mb-3">No Cameras Available</h3>
-                  <p className="text-gray-500 mb-6">Add cameras to start monitoring railway operations.</p>
+              <Card className="p-8 text-center bg-gray-900 border-gray-700 rounded-lg shadow-md">
+                <CardContent className="space-y-6">
+                  <Camera className="h-16 w-16 text-gray-600 mx-auto" />
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-400 mb-2">No Cameras Available</h3>
+                    <p className="text-gray-500">Add cameras to start monitoring railway operations.</p>
+                  </div>
                   {user?.role === 'admin' && (
                     <Button 
                       onClick={() => setIsAddCameraOpen(true)} 
-                      className="bg-blue-600 hover:bg-blue-700 transition-all duration-200 px-6 py-3 font-medium"
+                      className="px-6 py-3 rounded-lg font-semibold transition-all duration-200 min-h-[44px] flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white"
                     >
                       <Camera className="h-4 w-4 mr-2" />
                       Add Your First Camera
@@ -1014,7 +1031,7 @@ const Dashboard = () => {
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid-consistent grid-cards">
                 {filteredCameras.map((camera) => (
                   <VideoFeed
                     key={camera.id}
@@ -1031,43 +1048,43 @@ const Dashboard = () => {
 
             {/* Add Camera Dialog */}
             <Dialog open={isAddCameraOpen} onOpenChange={setIsAddCameraOpen}>
-              <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-md">
-                <DialogHeader className="pb-4">
-                  <DialogTitle className="text-xl font-semibold">Add New Camera</DialogTitle>
-                  <DialogDescription className="text-gray-400">
+              <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-lg">
+                <DialogHeader className="pb-6">
+                  <DialogTitle className="text-2xl font-semibold">Add New Camera</DialogTitle>
+                  <DialogDescription className="text-gray-400 text-base">
                     Configure a new camera for the surveillance system.
                   </DialogDescription>
                 </DialogHeader>
-                <form onSubmit={handleAddCamera} className="space-y-5">
-                  <div className="space-y-2">
-                    <Label htmlFor="name" className="text-sm font-medium text-gray-200">Camera Name</Label>
+                <form onSubmit={handleAddCamera} className="space-y-6">
+                  <div className="space-y-3">
+                    <Label htmlFor="name" className="text-base font-semibold text-gray-200">Camera Name</Label>
                     <Input
                       id="name"
                       value={newCamera.name}
                       onChange={(e) => setNewCamera({...newCamera, name: e.target.value})}
-                      className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 h-10 px-4"
+                      className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 h-12 px-4 text-base"
                       placeholder="Platform 1 Camera"
                       required
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="location" className="text-sm font-medium text-gray-200">Location</Label>
+                  <div className="space-y-3">
+                    <Label htmlFor="location" className="text-base font-semibold text-gray-200">Location</Label>
                     <Input
                       id="location"
                       value={newCamera.location}
                       onChange={(e) => setNewCamera({...newCamera, location: e.target.value})}
-                      className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 h-10 px-4"
+                      className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 h-12 px-4 text-base"
                       placeholder="Platform 1, Main Station"
                       required
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="source" className="text-sm font-medium text-gray-200">Camera Source</Label>
+                  <div className="space-y-3">
+                    <Label htmlFor="source" className="text-base font-semibold text-gray-200">Camera Source</Label>
                     <Select 
                       value={newCamera.source} 
                       onValueChange={(value) => setNewCamera({...newCamera, source: value})}
                     >
-                      <SelectTrigger className="bg-gray-800 border-gray-600 h-10">
+                      <SelectTrigger className="bg-gray-800 border-gray-600 h-12 text-base">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="bg-gray-800 border-gray-600">
@@ -1078,36 +1095,36 @@ const Dashboard = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="gps_lat" className="text-sm font-medium text-gray-200">GPS Latitude</Label>
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="space-y-3">
+                      <Label htmlFor="gps_lat" className="text-base font-semibold text-gray-200">GPS Latitude</Label>
                       <Input
                         id="gps_lat"
                         type="number"
                         step="any"
                         value={newCamera.gps_lat}
                         onChange={(e) => setNewCamera({...newCamera, gps_lat: parseFloat(e.target.value) || 0})}
-                        className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 h-10 px-4"
+                        className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 h-12 px-4 text-base"
                         placeholder="28.6139"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="gps_lng" className="text-sm font-medium text-gray-200">GPS Longitude</Label>
+                    <div className="space-y-3">
+                      <Label htmlFor="gps_lng" className="text-base font-semibold text-gray-200">GPS Longitude</Label>
                       <Input
                         id="gps_lng"
                         type="number"
                         step="any"
                         value={newCamera.gps_lng}
                         onChange={(e) => setNewCamera({...newCamera, gps_lng: parseFloat(e.target.value) || 0})}
-                        className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 h-10 px-4"
+                        className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 h-12 px-4 text-base"
                         placeholder="77.2090"
                       />
                     </div>
                   </div>
-                  <div className="flex space-x-3 pt-4">
+                  <div className="flex space-x-4 pt-6">
                     <Button 
                       type="submit" 
-                      className="flex-1 bg-blue-600 hover:bg-blue-700 transition-all duration-200 h-10 font-medium"
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 transition-all duration-200 h-12 font-semibold text-base"
                     >
                       Add Camera
                     </Button>
@@ -1115,7 +1132,7 @@ const Dashboard = () => {
                       type="button" 
                       variant="outline" 
                       onClick={() => setIsAddCameraOpen(false)}
-                      className="border-gray-600 text-gray-300 hover:bg-gray-800 h-10 px-6"
+                      className="border-gray-600 text-gray-300 hover:bg-gray-800 h-12 px-8"
                     >
                       Cancel
                     </Button>
@@ -1203,15 +1220,15 @@ const Dashboard = () => {
             )}
           </TabsContent>
 
-          <TabsContent value="events" className="space-y-6">
-            <div className="flex justify-between items-center flex-wrap gap-4 mb-6">
+          <TabsContent value="events" className="space-y-8">
+            <div className="flex justify-between items-center flex-wrap gap-6 mb-8">
               <div>
-                <h2 className="text-2xl font-bold text-white mb-2">Security Events</h2>
-                <p className="text-gray-400">Monitor and manage security incidents</p>
+                <h2 className="text-3xl font-bold text-white mb-3">Security Events</h2>
+                <p className="text-gray-400 text-lg">Monitor and manage security incidents</p>
               </div>
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-6">
                 <Select value={eventFilter} onValueChange={setEventFilter}>
-                  <SelectTrigger className="w-48 bg-gray-800 border-gray-600 h-10">
+                  <SelectTrigger className="w-56 bg-gray-800 border-gray-600 h-12 text-base">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-gray-800 border-gray-600">
@@ -1224,9 +1241,9 @@ const Dashboard = () => {
                 <Button 
                   variant="outline" 
                   onClick={fetchEvents} 
-                  className="border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white transition-all duration-200 px-4 py-2.5"
+                  className="border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white transition-all duration-200 px-6 py-3 text-base"
                 >
-                  <RefreshCw className="h-4 w-4 mr-2" />
+                  <RefreshCw className="h-5 w-5 mr-3" />
                   Refresh
                 </Button>
               </div>
@@ -1234,10 +1251,10 @@ const Dashboard = () => {
 
             {filteredEvents.length === 0 ? (
               <Card className="bg-gray-900 border-gray-700 shadow-xl">
-                <CardContent className="p-12 text-center">
-                  <AlertTriangle className="h-16 w-16 text-gray-600 mx-auto mb-6" />
-                  <h3 className="text-xl font-semibold text-gray-400 mb-3">No Events Found</h3>
-                  <p className="text-gray-500">No security events match the current filter.</p>
+                <CardContent className="p-16 text-center">
+                  <AlertTriangle className="h-20 w-20 text-gray-600 mx-auto mb-8" />
+                  <h3 className="text-2xl font-semibold text-gray-400 mb-4">No Events Found</h3>
+                  <p className="text-gray-500 text-lg">No security events match the current filter.</p>
                 </CardContent>
               </Card>
             ) : (
@@ -1245,53 +1262,53 @@ const Dashboard = () => {
                 <Table>
                   <TableHeader>
                     <TableRow className="border-gray-700 bg-gray-800/50">
-                      <TableHead className="text-gray-300 font-semibold py-4">Time</TableHead>
-                      <TableHead className="text-gray-300 font-semibold py-4">Camera</TableHead>
-                      <TableHead className="text-gray-300 font-semibold py-4">Event Type</TableHead>
-                      <TableHead className="text-gray-300 font-semibold py-4">Status</TableHead>
-                      <TableHead className="text-gray-300 font-semibold py-4">Actions</TableHead>
+                      <TableHead className="text-gray-300 font-semibold py-6 text-base">Time</TableHead>
+                      <TableHead className="text-gray-300 font-semibold py-6 text-base">Camera</TableHead>
+                      <TableHead className="text-gray-300 font-semibold py-6 text-base">Event Type</TableHead>
+                      <TableHead className="text-gray-300 font-semibold py-6 text-base">Status</TableHead>
+                      <TableHead className="text-gray-300 font-semibold py-6 text-base">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredEvents.map((event) => (
                       <TableRow key={event.id} className="border-gray-700 hover:bg-gray-800/50 transition-colors">
-                        <TableCell className="text-gray-300 py-4">
-                          <div className="flex items-center space-x-3">
-                            <Clock className="h-4 w-4 text-gray-500 flex-shrink-0" />
-                            <span className="text-sm">{new Date(event.timestamp).toLocaleString()}</span>
+                        <TableCell className="text-gray-300 py-6">
+                          <div className="flex items-center space-x-4">
+                            <Clock className="h-5 w-5 text-gray-500 flex-shrink-0" />
+                            <span className="text-base">{new Date(event.timestamp).toLocaleString()}</span>
                           </div>
                         </TableCell>
-                        <TableCell className="text-gray-300 py-4">
-                          <span className="font-medium">{event.camera_name}</span>
+                        <TableCell className="text-gray-300 py-6">
+                          <span className="font-semibold text-base">{event.camera_name}</span>
                         </TableCell>
-                        <TableCell className="py-4">
-                          <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-400 px-3 py-1 font-medium">
+                        <TableCell className="py-6">
+                          <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-400 px-4 py-2 font-semibold text-base">
                             {event.event_type.replace('_', ' ').toUpperCase()}
                           </Badge>
                         </TableCell>
-                        <TableCell className="py-4">
+                        <TableCell className="py-6">
                           {event.is_acknowledged ? (
-                            <Badge variant="default" className="bg-green-500/20 text-green-400 px-3 py-1 font-medium">
-                              <CheckCircle className="h-3 w-3 mr-2" />
+                            <Badge variant="default" className="bg-green-500/20 text-green-400 px-4 py-2 font-semibold text-base">
+                              <CheckCircle className="h-4 w-4 mr-2" />
                               Acknowledged
                             </Badge>
                           ) : (
-                            <Badge variant="destructive" className="bg-red-500/20 text-red-400 px-3 py-1 font-medium">
-                              <AlertCircle className="h-3 w-3 mr-2" />
+                            <Badge variant="destructive" className="bg-red-500/20 text-red-400 px-4 py-2 font-semibold text-base">
+                              <AlertCircle className="h-4 w-4 mr-2" />
                               Pending
                             </Badge>
                           )}
                         </TableCell>
-                        <TableCell className="py-4">
-                          <div className="flex space-x-2">
+                        <TableCell className="py-6">
+                          <div className="flex space-x-3">
                             {!event.is_acknowledged && (
                               <Button 
                                 size="sm" 
                                 variant="outline" 
                                 onClick={() => acknowledgeEvent(event.id)}
-                                className="border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white transition-all duration-200 px-3 py-1.5"
+                                className="border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white transition-all duration-200 px-4 py-2 text-base"
                               >
-                                <CheckCircle className="h-4 w-4 mr-1" />
+                                <CheckCircle className="h-4 w-4 mr-2" />
                                 Acknowledge
                               </Button>
                             )}
@@ -1308,14 +1325,14 @@ const Dashboard = () => {
           <TabsContent value="settings" className="space-y-6">
             <div className="flex justify-between items-center flex-wrap gap-4 mb-6">
               <div>
-                <h2 className="text-2xl font-bold text-white mb-2">System Settings</h2>
-                <p className="text-gray-400">System configuration and user management</p>
+                <h2 className="text-title text-white">System Settings</h2>
+                <p className="text-subtitle">System configuration and user management</p>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid-consistent grid-cards">
               {/* User Profile Card */}
-              <Card className="bg-gray-900 border-gray-700 shadow-xl hover:border-gray-600 transition-all duration-300">
+              <Card className="p-6 bg-gray-900 border-gray-700 rounded-lg shadow-md hover:transform hover:-translate-y-1 hover:shadow-lg transition-all duration-200">
                 <CardHeader className="pb-4">
                   <CardTitle className="text-white flex items-center text-lg">
                     <Users className="h-5 w-5 mr-3 text-blue-400" />
@@ -1323,22 +1340,22 @@ const Dashboard = () => {
                   </CardTitle>
                   <CardDescription className="text-gray-400">Manage your account settings</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between py-2">
+                <CardContent className="space-y-4 p-0">
+                  <div className="flex items-center justify-between py-3">
                     <span className="text-gray-400 font-medium">Username</span>
                     <span className="text-white font-semibold">{user?.username}</span>
                   </div>
-                  <div className="flex items-center justify-between py-2 border-t border-gray-700">
+                  <div className="flex items-center justify-between py-3 border-t border-gray-700">
                     <span className="text-gray-400 font-medium">Email</span>
                     <span className="text-white font-semibold">{user?.email}</span>
                   </div>
-                  <div className="flex items-center justify-between py-2 border-t border-gray-700">
+                  <div className="flex items-center justify-between py-3 border-t border-gray-700">
                     <span className="text-gray-400 font-medium">Role</span>
                     <Badge variant="secondary" className="bg-blue-500/20 text-blue-400 px-3 py-1 font-medium">
                       {user?.role?.replace('_', ' ').toUpperCase()}
                     </Badge>
                   </div>
-                  <div className="flex items-center justify-between py-2 border-t border-gray-700">
+                  <div className="flex items-center justify-between py-3 border-t border-gray-700">
                     <span className="text-gray-400 font-medium">Status</span>
                     <Badge variant="default" className="bg-green-500/20 text-green-400 px-3 py-1 font-medium">
                       <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>

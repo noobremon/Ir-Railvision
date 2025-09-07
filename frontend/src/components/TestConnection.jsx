@@ -23,16 +23,16 @@ const TestConnection = () => {
   }, []);
 
   return (
-    <div className="p-4 max-w-md mx-auto mt-10 bg-white rounded-lg shadow-md">
-      <h2 className="text-xl font-bold mb-4">MongoDB Connection Test</h2>
-      <p className="mb-4">{connectionStatus}</p>
+    <div className="p-8 max-w-lg mx-auto mt-12 bg-white rounded-xl shadow-lg">
+      <h2 className="text-2xl font-bold mb-6">MongoDB Connection Test</h2>
+      <p className="mb-6 text-lg">{connectionStatus}</p>
       
       {collections.length > 0 && (
         <div>
-          <h3 className="font-semibold mb-2">Available Collections:</h3>
-          <ul className="list-disc pl-5">
+          <h3 className="font-semibold mb-4 text-lg">Available Collections:</h3>
+          <ul className="list-disc pl-6 space-y-2">
             {collections.map((collection, index) => (
-              <li key={index} className="text-sm">{collection}</li>
+              <li key={index} className="text-base">{collection}</li>
             ))}
           </ul>
         </div>
