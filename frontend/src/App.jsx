@@ -1532,7 +1532,7 @@ const Dashboard = () => {
                   </CardTitle>
                   <CardDescription className="text-gray-400">System administration tools</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="space-y-3 pb-4">
                   <Button 
                     variant="outline" 
                     className="w-full justify-start border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white hover:border-gray-500 transition-all duration-200 h-12 px-4"
@@ -1577,7 +1577,7 @@ const Dashboard = () => {
                   {user?.role === 'admin' && (
                     <Button 
                       variant="outline" 
-                      className="w-full justify-start border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white hover:border-gray-500 transition-all duration-200 h-12 px-4"
+                      className="w-full justify-start border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white hover:border-gray-500 transition-all duration-200 h-12 px-4 !mb-2"
                       onClick={() => {
                         toast({
                           title: "Export Data",
