@@ -165,40 +165,40 @@ const LoginPage = () => {
       
       {/* Centered Login Container */}
       <div className="w-full max-w-md relative z-10">
-        <Card className="card-standard bg-white/10 backdrop-blur-md border-white/20 shadow-xl overflow-hidden">
+        <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl overflow-hidden">
           {/* Header Section */}
-          <CardHeader className="text-center layout-spacing pt-8 pb-6 px-8">
-            <div className="center-content mb-4">
+          <CardHeader className="text-center pt-8 pb-6 px-8">
+            <div className="flex justify-center mb-4">
               <div className="bg-blue-500/20 p-4 rounded-2xl border border-blue-500/30">
                 <Shield className="h-8 w-8 text-blue-400" />
               </div>
             </div>
-            <CardTitle className="text-heading-lg text-white">Railway VSS</CardTitle>
-            <CardDescription className="text-subtitle text-gray-300">
+            <CardTitle className="text-2xl font-bold text-white">Railway VSS</CardTitle>
+            <CardDescription className="text-gray-300 text-sm mt-1">
               Video Surveillance System Login
             </CardDescription>
           </CardHeader>
           
           {/* Form Section */}
-          <CardContent className="card-padding-xl">
-            <form onSubmit={handleSubmit} className="layout-spacing">
-              <div className="space-y-2">
-                <Label htmlFor="username" className="form-label-standard ml-4">
-                  Username
+          <CardContent className="px-8 py-6">
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="space-y-1.5">
+                <Label htmlFor="username" className="block text-sm font-medium text-gray-300 ml-1">
+                     Username
                 </Label>
                 <Input
                   id="username"
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="form-input-standard ml-4 mr-4"
+                  className="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Enter username"
                   required
                 />
               </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="password" className="form-label-standard ml-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="password" className="block text-sm font-medium text-gray-300 ml-1">
                   Password
                 </Label>
                 <Input
@@ -206,20 +206,20 @@ const LoginPage = () => {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="form-input-standard ml-4 mr-4"
+                  className="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Enter password"
                   required
                 />
               </div>
               
-              <div className="pt-2">
+              <div className="pt-1">
                 <Button 
                   type="submit" 
-                  className="form-button-primary ml-4 mr-4"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={isLoading}
                 >
                   {isLoading ? (
-                    <div className="center-content">
+                    <div className="flex items-center justify-center">
                       <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
                       Signing In...
                     </div>
@@ -233,17 +233,20 @@ const LoginPage = () => {
         </Card>
         
         {/* Demo Credentials - Separate Card */}
-        <Card className="mt-6 card-standard bg-blue-500/10 backdrop-blur-md border-blue-500/30">
-          <CardContent className="card-padding-lg">
-            <h3 className="text-heading-sm text-blue-200 text-center ml-4 mb-4">Demo Credentials</h3>
-            <div className="layout-spacing">
+        <Card className="mt-6 bg-blue-500/10 backdrop-blur-md border-blue-500/30">
+          <CardContent className="p-6">
+            <h3 className="text-sm font-medium text-blue-200 text-center mb-4">Demo Credentials</h3>
+            <div className="space-y-3">
               {demoUsers.map((user, index) => (
-                <div key={index} className="flex-between bg-blue-500/10 rounded-xl p-4 ml-4 mr-4">
-                  <span className="text-body text-blue-200 font-medium ml-4">
+                <div 
+                  key={index} 
+                  className="flex items-center justify-between bg-blue-500/10 rounded-lg p-3 hover:bg-blue-500/20 transition-colors duration-200"
+                >
+                  <span className="text-sm text-blue-200 font-medium">
                     {user.username} / {user.password}
                   </span>
-                  <span className="text-caption text-blue-300 font-medium mr-4">
-                    ({user.role})
+                  <span className="text-xs text-blue-300 font-medium bg-blue-500/20 px-2.5 py-1 rounded-full">
+                    {user.role}
                   </span>
                 </div>
               ))}
