@@ -668,19 +668,32 @@ async def websocket_endpoint(websocket: WebSocket):
                 
                 await asyncio.sleep(0.1)  # ~10 FPS
                 
-            except WebSocketDisconnect:
+            except WebSocketDisconnect as e:
+                if e.code == 1000:  # Normal closure
+                    logging.debug(f"WebSocket client disconnected normally: {e}")
+                elif e.code == 1001:  # Going away
+                    logging.debug(f"WebSocket client is going away: {e}")
+                elif e.code == 1006:  # Abnormal closure
+                    logging.warning(f"WebSocket connection closed abnormally: {e}")
+                else:
+                    logging.warning(f"WebSocket disconnected with code {e.code}: {e}")
+                break
+            except asyncio.CancelledError:
+                logging.debug("WebSocket connection was cancelled")
                 break
             except Exception as e:
-                logging.error(f"WebSocket frame error: {e}")
+                logging.error(f"WebSocket frame error: {e}", exc_info=True)
                 await asyncio.sleep(1)  # Prevent tight error loop
                 
-    except WebSocketDisconnect:
-        pass
+    except WebSocketDisconnect as e:
+        if e.code != 1000:  # Only log non-normal disconnections
+            logging.debug(f"WebSocket disconnected during connection: {e}")
     except Exception as e:
-        logging.error(f"WebSocket error: {e}")
+        logging.error(f"WebSocket error: {e}", exc_info=True)
     finally:
         if websocket in websocket_connections:
             websocket_connections.remove(websocket)
+        logging.debug("WebSocket connection cleaned up")
 
 # Include router
 app.include_router(api_router)
@@ -699,10 +712,15 @@ app.add_middleware(
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.WARNING,  # Changed from INFO to WARNING to reduce log noise
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+# Suppress websockets and uvicorn access logs
+logging.getLogger('websockets').setLevel(logging.WARNING)
+logging.getLogger('uvicorn').setLevel(logging.WARNING)
+logging.getLogger('uvicorn.access').disabled = True
 
 @app.on_event("startup")
 async def startup_event():
