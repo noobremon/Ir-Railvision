@@ -310,6 +310,7 @@ class VideoProcessor:
         self.capture_thread = None
         self.stop_event = threading.Event()
         self.current_frame = None
+        self.loop = asyncio.get_running_loop()
         
     def start(self):
         try:
@@ -446,6 +447,10 @@ class VideoProcessor:
     def process_frame_for_events(self, frame):
         """Enhanced frame processing for multiple event types"""
         try:
+            # Only process events for default webcam (source "0")
+            if str(self.source) != "0":
+                return
+
             current_time = time.time()
             
             # Ensure frame is valid
@@ -468,13 +473,35 @@ class VideoProcessor:
                     if current_time - self.last_motion_time > 5:  # Avoid spam events
                         self.last_motion_time = current_time
                         
-                        # Use call_soon_threadsafe for async operations from thread
-                        loop = asyncio.new_event_loop()
-                        asyncio.set_event_loop(loop)
-                        # Note: In a real app we'd need a robust way to bridge sync thread to async DB
-                        # For now we'll skip actual DB insert in this thread to avoid complexity
-                        # or use a callbacks queue
-                        pass 
+                        # Use run_coroutine_threadsafe to schedule async event on main loop
+                        asyncio.run_coroutine_threadsafe(
+                            self.trigger_event(
+                                EventType.MOTION, 
+                                f"Significant motion detected (area: {motion_area} pixels)",
+                                min(0.95, motion_area / 10000),  # Dynamic confidence
+                                "medium"
+                            ),
+                            self.loop
+                        )
+            
+            # Simulate other AI events periodically for demonstration
+            if self.frame_count % 1200 == 0:  # Every ~2 minutes at 10fps
+                event_type = random.choice([EventType.CROWD_GATHERING, EventType.DROWSINESS, EventType.PANIC])
+                descriptions = {
+                    EventType.CROWD_GATHERING: "Crowd gathering detected on platform",
+                    EventType.DROWSINESS: "Driver drowsiness pattern detected",
+                    EventType.PANIC: "Unusual crowd behavior pattern detected"
+                }
+                
+                asyncio.run_coroutine_threadsafe(
+                    self.trigger_event(
+                        event_type,
+                        descriptions[event_type],
+                        random.uniform(0.7, 0.95),
+                        random.choice(["medium", "high"])
+                    ),
+                    self.loop
+                ) 
             
             # Store frame for processing (keep small for memory/speed)
             self.last_frame = cv2.resize(frame, (320, 240))
