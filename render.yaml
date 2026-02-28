@@ -1,0 +1,59 @@
+services:
+  # Backend API Service
+  - type: web
+    name: ir-railvision-backend
+    runtime: python
+    region: oregon  # Choose: oregon, frankfurt, singapore, ohio
+    plan: free  # or starter/standard for production
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: uvicorn backend.server:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/test
+    envVars:
+      - key: PORT
+        value: 8000
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: JWT_SECRET
+        generateValue: true
+        sync: false
+      - key: CORS_ORIGINS
+        value: https://ir-railvision-frontend.onrender.com
+      - key: LOG_LEVEL
+        value: INFO
+      - key: DB_NAME
+        value: railway_surveillance
+      # Optional: Add MongoDB URL if using Atlas
+      # - key: MONGO_URL
+      #   value: mongodb+srv://username:password@cluster.mongodb.net/railway_surveillance
+    
+  # Frontend Static Site
+  - type: web
+    name: ir-railvision-frontend
+    runtime: static
+    region: oregon  # Same region as backend for lower latency
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: frontend/dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://ir-railvision-backend.onrender.com/api
+    routes:
+      - type: rewrite
+        source: /api/*
+        destination: https://ir-railvision-backend.onrender.com/api/*
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: SAMEORIGIN
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: X-XSS-Protection
+        value: 1; mode=block
+
+# Optional: MongoDB Database (if using Render's managed MongoDB)
+# databases:
+#   - name: ir-railvision-db
+#     databaseName: railway_surveillance
+#     user: railway_user
+#     plan: free  # 1GB storage
