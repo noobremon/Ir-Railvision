@@ -47,8 +47,8 @@ import {
   Info
 } from 'lucide-react';
 
-// Use relative API URL to leverage Vite proxy
-const API_BASE_URL = '/api';
+// In production use the full backend URL; locally use relative path (Vite proxy)
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 const API = API_BASE_URL;
 
 // Authentication Context

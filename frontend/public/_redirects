@@ -1,5 +1,4 @@
-# Redirect API calls to backend (for local development)
-# Update the URL to your actual backend URL when deployed
+# Proxy API calls to backend (fallback – frontend now uses VITE_API_URL directly)
 /api/* https://ir-railvision-backend.onrender.com/api/:splat 200
 
 # SPA fallback - serve index.html for all routes
