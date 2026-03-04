@@ -652,8 +652,9 @@ const Dashboard = () => {
   const fetchCameras = async () => {
     try {
       const response = await axios.get(`${API}/cameras`);
-      setCameras(response.data);
-      console.log('Cameras loaded successfully:', response.data.length);
+      const data = Array.isArray(response.data) ? response.data : [];
+      setCameras(data);
+      console.log('Cameras loaded successfully:', data.length);
     } catch (error) {
       console.error('Failed to fetch cameras:', error);
       if (error.response?.status === 401) {
@@ -671,8 +672,9 @@ const Dashboard = () => {
   const fetchEvents = async () => {
     try {
       const response = await axios.get(`${API}/events`);
-      setEvents(response.data);
-      console.log('Events loaded successfully:', response.data.length);
+      const data = Array.isArray(response.data) ? response.data : [];
+      setEvents(data);
+      console.log('Events loaded successfully:', data.length);
     } catch (error) {
       console.error('Failed to fetch events:', error);
       if (error.response?.status !== 401) {
