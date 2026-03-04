@@ -13,7 +13,7 @@ import asyncio
 import json
 import base64
 from pathlib import Path
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timezone
 import uuid
@@ -85,13 +85,8 @@ async def root():
         "health": "/api/health"
     }
 
-@app.get("/api/health")
-async def root_health():
-    return {
-        "status": "healthy",
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "system": "Railway Video Surveillance System v1.0"
-    }
+# Note: /api/health and /api/test are registered on the api_router (with prefix /api)
+# No duplicate root-level routes needed
 
 @app.get("/api/test")
 async def root_test():
@@ -119,8 +114,9 @@ class EventType(str, Enum):
     CROWD_GATHERING = "crowd_gathering"
     ABANDONED_OBJECT = "abandoned_object"
 
-# Models
+# Models - use model_config to ignore extra fields like _id from MongoDB/mock DB
 class User(BaseModel):
+    model_config = ConfigDict(extra='ignore')
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     username: str
     email: str
@@ -139,6 +135,7 @@ class UserLogin(BaseModel):
     password: str
 
 class Camera(BaseModel):
+    model_config = ConfigDict(extra='ignore')
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
     location: str
@@ -160,6 +157,7 @@ class CameraCreate(BaseModel):
     gps_lng: float = 0.0
 
 class Event(BaseModel):
+    model_config = ConfigDict(extra='ignore')
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     camera_id: str
     camera_name: str = ""
@@ -177,6 +175,7 @@ class Event(BaseModel):
     severity: str = "medium"  # low, medium, high, critical
 
 class Recording(BaseModel):
+    model_config = ConfigDict(extra='ignore')
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     camera_id: str
     camera_name: str = ""
@@ -241,13 +240,17 @@ async def db_find_one(collection_name: str, query: dict):
 async def db_find(collection_name: str, query: Optional[dict] = None, limit: int = 1000):
     if MONGO_AVAILABLE and db is not None:
         cursor = db[collection_name].find(query or {})
-        return await cursor.sort("timestamp", -1).limit(limit).to_list(limit)
+        # Use a sort field that exists; cameras use created_at, events use timestamp
+        sort_field = "created_at" if collection_name == "cameras" else "timestamp"
+        return await cursor.sort(sort_field, -1).limit(limit).to_list(limit)
     else:
         # Mock implementation
-        results = mock_db[collection_name]
+        results = list(mock_db[collection_name])  # copy the list
         if query:
             results = [doc for doc in results if all(doc.get(k) == v for k, v in query.items())]
-        return sorted(results, key=lambda x: x.get('timestamp', ''), reverse=True)[:limit]
+        # Sort by created_at for cameras, timestamp for events/others
+        sort_key = 'created_at' if collection_name == 'cameras' else 'timestamp'
+        return sorted(results, key=lambda x: str(x.get(sort_key, '')), reverse=True)[:limit]
 
 async def db_update_one(collection_name: str, query: dict, update: dict):
     if MONGO_AVAILABLE and db is not None:
@@ -564,12 +567,12 @@ class VideoProcessor:
             )
             
             # Save to database
-            await db_insert_one('events', event.dict())
+            await db_insert_one('events', event.model_dump())
             
             # Notify connected websockets
             notification = {
                 'type': 'event',
-                'data': event.dict()
+                'data': event.model_dump()
             }
             
             # Send to all connected clients
@@ -632,7 +635,7 @@ async def register(user_data: UserCreate):
         role=user_data.role
     )
     
-    user_dict = user.dict()
+    user_dict = user.model_dump()
     user_dict["password"] = hashed_password
     
     await db_insert_one('users', user_dict)
@@ -661,33 +664,44 @@ async def logout(current_user: User = Depends(get_current_user)):
 async def get_me(current_user: User = Depends(get_current_user)):
     return current_user
 
-@api_router.post("/cameras", response_model=Camera)
+@api_router.post("/cameras")
 async def create_camera(camera_data: CameraCreate, current_user: User = Depends(get_current_user)):
     if current_user.role not in [UserRole.ADMIN, UserRole.OPERATOR]:
         raise HTTPException(status_code=403, detail="Insufficient permissions. Only admins and operators can add cameras.")
     
-    camera = Camera(**camera_data.dict())
-    await db_insert_one('cameras', camera.dict())
-    return camera
+    camera = Camera(**camera_data.model_dump())
+    await db_insert_one('cameras', camera.model_dump())
+    return camera.model_dump()
 
-@api_router.get("/cameras", response_model=List[Camera])
+@api_router.get("/cameras")
 async def get_cameras(current_user: User = Depends(get_current_user)):
-    cameras = await db_find('cameras')
-    return [Camera(**camera) for camera in cameras]
+    try:
+        cameras = await db_find('cameras')
+        result = []
+        for camera in cameras:
+            try:
+                result.append(Camera(**camera).model_dump())
+            except Exception as e:
+                logging.error(f"Error parsing camera: {e}")
+                continue
+        return result
+    except Exception as e:
+        logging.error(f"Error fetching cameras: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch cameras: {str(e)}")
 
-@api_router.get("/cameras/{camera_id}", response_model=Camera)
+@api_router.get("/cameras/{camera_id}")
 async def get_camera(camera_id: str, current_user: User = Depends(get_current_user)):
     camera = await db_find_one('cameras', {"id": camera_id})
     if not camera:
         raise HTTPException(status_code=404, detail="Camera not found")
-    return Camera(**camera)
+    return Camera(**camera).model_dump()
 
-@api_router.put("/cameras/{camera_id}", response_model=Camera)
+@api_router.put("/cameras/{camera_id}")
 async def update_camera(camera_id: str, camera_data: CameraCreate, current_user: User = Depends(get_current_user)):
     if current_user.role not in [UserRole.ADMIN, UserRole.OPERATOR]:
         raise HTTPException(status_code=403, detail="Insufficient permissions. Only admins and operators can update cameras.")
     
-    result = await db_update_one('cameras', {"id": camera_id}, {"$set": camera_data.dict()})
+    result = await db_update_one('cameras', {"id": camera_id}, {"$set": camera_data.model_dump()})
     
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Camera not found")
@@ -696,7 +710,7 @@ async def update_camera(camera_id: str, camera_data: CameraCreate, current_user:
     if updated_camera is None:
         raise HTTPException(status_code=404, detail="Camera not found after update")
     
-    return Camera(**updated_camera)
+    return Camera(**updated_camera).model_dump()
 
 @api_router.delete("/cameras/{camera_id}")
 async def delete_camera(camera_id: str, current_user: User = Depends(get_current_user)):
@@ -790,7 +804,7 @@ async def stop_camera(camera_id: str, current_user: User = Depends(get_current_u
                 pass
         raise HTTPException(status_code=500, detail="Failed to stop camera")
 
-@api_router.get("/events", response_model=List[Event])
+@api_router.get("/events")
 async def get_events(
     limit: int = 100,
     event_type: Optional[EventType] = None,
@@ -799,18 +813,29 @@ async def get_events(
     severity: Optional[str] = None,
     current_user: User = Depends(get_current_user)
 ):
-    query = {}
-    if event_type:
-        query["event_type"] = event_type
-    if camera_id:
-        query["camera_id"] = camera_id
-    if acknowledged is not None:
-        query["is_acknowledged"] = acknowledged
-    if severity:
-        query["severity"] = severity
-    
-    events = await db_find('events', query, limit)
-    return [Event(**event) for event in events]
+    try:
+        query = {}
+        if event_type:
+            query["event_type"] = event_type
+        if camera_id:
+            query["camera_id"] = camera_id
+        if acknowledged is not None:
+            query["is_acknowledged"] = acknowledged
+        if severity:
+            query["severity"] = severity
+        
+        events = await db_find('events', query, limit)
+        result = []
+        for event in events:
+            try:
+                result.append(Event(**event).model_dump())
+            except Exception as e:
+                logging.error(f"Error parsing event: {e}")
+                continue
+        return result
+    except Exception as e:
+        logging.error(f"Error fetching events: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch events: {str(e)}")
 
 @api_router.put("/events/{event_id}/acknowledge")
 async def acknowledge_event(event_id: str, current_user: User = Depends(get_current_user)):
@@ -827,18 +852,29 @@ async def acknowledge_event(event_id: str, current_user: User = Depends(get_curr
     
     return {"message": "Event acknowledged successfully"}
 
-@api_router.get("/recordings", response_model=List[Recording])
+@api_router.get("/recordings")
 async def get_recordings(
     limit: int = 100,
     camera_id: Optional[str] = None,
     current_user: User = Depends(get_current_user)
 ):
-    query = {}
-    if camera_id:
-        query["camera_id"] = camera_id
-    
-    recordings = await db_find('recordings', query, limit)
-    return [Recording(**recording) for recording in recordings]
+    try:
+        query = {}
+        if camera_id:
+            query["camera_id"] = camera_id
+        
+        recordings = await db_find('recordings', query, limit)
+        result = []
+        for recording in recordings:
+            try:
+                result.append(Recording(**recording).model_dump())
+            except Exception as e:
+                logging.error(f"Error parsing recording: {e}")
+                continue
+        return result
+    except Exception as e:
+        logging.error(f"Error fetching recordings: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch recordings: {str(e)}")
 
 @api_router.get("/dashboard/stats")
 async def get_dashboard_stats(current_user: User = Depends(get_current_user)):
@@ -1004,7 +1040,7 @@ async def startup_event():
             email="admin@railway.gov.in",
             role=UserRole.ADMIN
         )
-        admin_dict = admin_user.dict()
+        admin_dict = admin_user.model_dump()
         admin_dict["password"] = hash_password("admin123")  # Change in production
         await db_insert_one('users', admin_dict)
         logger.info("Default admin user created: admin/admin123")
@@ -1017,7 +1053,7 @@ async def startup_event():
             email="operator@railway.gov.in", 
             role=UserRole.OPERATOR
         )
-        operator_dict = operator_user.dict()
+        operator_dict = operator_user.model_dump()
         operator_dict["password"] = hash_password("operator123")
         await db_insert_one('users', operator_dict)
         logger.info("Default operator user created: operator/operator123")
@@ -1029,7 +1065,7 @@ async def startup_event():
             email="security@railway.gov.in",
             role=UserRole.SECURITY_OFFICER
         )
-        security_dict = security_user.dict()
+        security_dict = security_user.model_dump()
         security_dict["password"] = hash_password("security123")
         await db_insert_one('users', security_dict)
         logger.info("Default security user created: security/security123")
@@ -1097,7 +1133,7 @@ async def startup_event():
         
         for camera_data in default_cameras:
             camera = Camera(**camera_data)
-            await db_insert_one('cameras', camera.dict())
+            await db_insert_one('cameras', camera.model_dump())
             logger.info(f"Default camera created: {camera.name} at {camera.location}")
         
         logger.info("5 default Indian railway cameras created successfully")
@@ -1121,5 +1157,5 @@ async def shutdown_event():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8001, log_level="info")
+    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
 

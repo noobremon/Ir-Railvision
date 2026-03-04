@@ -508,6 +508,7 @@ const Dashboard = () => {
     // Set up periodic updates
     const statsInterval = setInterval(fetchStats, 10000);
     const eventsInterval = setInterval(fetchEvents, 30000);
+    const camerasInterval = setInterval(fetchCameras, 30000);
 
     // Handle page unload to properly close WebSocket
     const handleBeforeUnload = () => {
@@ -522,6 +523,7 @@ const Dashboard = () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
       clearInterval(statsInterval);
       clearInterval(eventsInterval);
+      clearInterval(camerasInterval);
       // Clear reconnection timeout
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
@@ -656,20 +658,24 @@ const Dashboard = () => {
     }
   };
 
-  const fetchCameras = async () => {
+  const fetchCameras = async (retryCount = 0) => {
     try {
       const response = await axios.get(`${API}/cameras`);
       const data = Array.isArray(response.data) ? response.data : [];
       setCameras(data);
       console.log('Cameras loaded successfully:', data.length);
     } catch (error) {
-      console.error('Failed to fetch cameras:', error);
+      console.error('Failed to fetch cameras:', error?.response?.status, error?.message);
       if (error.response?.status === 401) {
         console.log('Authentication required for cameras');
+      } else if (error.response?.status === 405 && retryCount < 2) {
+        // Retry with a small delay - the server may still be initializing routes
+        console.log(`Retrying camera fetch (attempt ${retryCount + 1})...`);
+        setTimeout(() => fetchCameras(retryCount + 1), 2000);
       } else {
         toast({
           title: "Failed to Load Cameras",
-          description: "Unable to fetch camera list",
+          description: `Unable to fetch camera list (${error.response?.status || 'network error'})`,
           variant: "destructive",
         });
       }
