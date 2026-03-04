@@ -544,7 +544,21 @@ const Dashboard = () => {
         }
       }
       
-      const wsUrl = 'ws://localhost:8000/api/ws';
+      // On production (Render), connect WebSocket directly to backend service
+      // On local dev, connect to localhost
+      const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+      let wsUrl;
+      if (isProduction) {
+        const apiUrl = import.meta.env.VITE_API_URL || '';
+        if (apiUrl) {
+          const backendHost = apiUrl.replace(/^https?:\/\//, '').replace(/\/api$/, '');
+          wsUrl = `wss://${backendHost}/api/ws`;
+        } else {
+          wsUrl = `wss://ir-railvision-backend.onrender.com/api/ws`;
+        }
+      } else {
+        wsUrl = 'ws://localhost:8000/api/ws';
+      }
       console.log('Attempting WebSocket connection to:', wsUrl);
       
       wsRef.current = new WebSocket(wsUrl);

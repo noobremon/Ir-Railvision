@@ -929,6 +929,15 @@ async def health_check():
         "system": "Railway Video Surveillance System v1.0"
     }
 
+@api_router.get("/test")
+async def test_connection():
+    return {
+        "status": "ok",
+        "message": "Backend is running",
+        "database": "connected" if MONGO_AVAILABLE else "mock_mode",
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+
 # Include router
 app.include_router(api_router)
 
