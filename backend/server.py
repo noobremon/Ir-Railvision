@@ -64,6 +64,24 @@ JWT_ALGORITHM = "HS256"
 app = FastAPI(title="Railway Video Surveillance System", version="1.0.0")
 api_router = APIRouter(prefix="/api")
 
+# Root-level health check (for Render health probes and direct access)
+@app.get("/")
+async def root():
+    return {
+        "status": "healthy",
+        "service": "IR Railvision Backend",
+        "api_docs": "/docs",
+        "health": "/api/health"
+    }
+
+@app.get("/api/test")
+async def root_test():
+    return {
+        "status": "ok",
+        "message": "Backend is running",
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+
 # Security
 security = HTTPBearer()
 
