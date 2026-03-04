@@ -62,9 +62,20 @@ JWT_ALGORITHM = "HS256"
 
 # Create the main app
 app = FastAPI(title="Railway Video Surveillance System", version="1.0.0")
+
+# CORS - must be added before any routes
+allowed_origins = os.environ.get('CORS_ORIGINS', 'http://localhost:3000,http://localhost:3001,http://localhost:5000').split(',')
+app.add_middleware(
+    CORSMiddleware,
+    allow_credentials=True,
+    allow_origins=allowed_origins,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 api_router = APIRouter(prefix="/api")
 
-# Root-level health check (for Render health probes and direct access)
+# Root-level endpoints (registered directly on app, always accessible)
 @app.get("/")
 async def root():
     return {
@@ -72,6 +83,14 @@ async def root():
         "service": "IR Railvision Backend",
         "api_docs": "/docs",
         "health": "/api/health"
+    }
+
+@app.get("/api/health")
+async def root_health():
+    return {
+        "status": "healthy",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "system": "Railway Video Surveillance System v1.0"
     }
 
 @app.get("/api/test")
@@ -961,16 +980,6 @@ app.include_router(api_router)
 
 # Serve static files for recordings
 app.mount("/recordings", StaticFiles(directory=RECORDINGS_DIR), name="recordings")
-
-# CORS
-allowed_origins = os.environ.get('CORS_ORIGINS', 'http://localhost:3000,http://localhost:3001,http://localhost:5000').split(',')
-app.add_middleware(
-    CORSMiddleware,
-    allow_credentials=True,
-    allow_origins=allowed_origins,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 # Configure logging
 log_level = os.environ.get('LOG_LEVEL', 'INFO')
