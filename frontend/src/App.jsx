@@ -456,6 +456,13 @@ const VideoFeed = ({ camera, isActive, onStart, onStop, onDelete, onEdit }) => {
   );
 };
 
+// Helper to robustly check if user has admin role
+const isAdmin = (user) => {
+  if (!user || !user.role) return false;
+  const role = String(user.role).toLowerCase().trim();
+  return role === 'admin';
+};
+
 // Complete Dashboard Component
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -818,8 +825,24 @@ const Dashboard = () => {
 
   const handleAddCamera = async (e) => {
     e.preventDefault();
+    
+    // Validate required fields
+    if (!newCamera.name.trim() || !newCamera.location.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Camera name and location are required",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     try {
-      await axios.post(`${API}/cameras`, newCamera);
+      const response = await axios.post(`${API}/cameras`, {
+        ...newCamera,
+        name: newCamera.name.trim(),
+        location: newCamera.location.trim(),
+        source: newCamera.source.trim() || '0',
+      });
       setIsAddCameraOpen(false);
       setNewCamera({ name: '', location: '', source: '0', gps_lat: 0, gps_lng: 0 });
       fetchCameras();
@@ -827,14 +850,31 @@ const Dashboard = () => {
       
       toast({
         title: "Camera Added",
-        description: "New camera has been added successfully",
+        description: `"${response.data?.name || newCamera.name}" has been added successfully`,
       });
     } catch (error) {
-      toast({
-        title: "Failed to Add Camera",
-        description: error.response?.data?.detail || "An error occurred",
-        variant: "destructive",
-      });
+      const status = error.response?.status;
+      const detail = error.response?.data?.detail;
+      
+      if (status === 403) {
+        toast({
+          title: "Permission Denied",
+          description: detail || "You don't have permission to add cameras. Contact an administrator.",
+          variant: "destructive",
+        });
+      } else if (status === 401) {
+        toast({
+          title: "Session Expired",
+          description: "Please log in again to continue.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Failed to Add Camera",
+          description: detail || "An error occurred while adding the camera",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -1020,15 +1060,13 @@ const Dashboard = () => {
                     <SelectItem value="inactive">Inactive Only</SelectItem>
                   </SelectContent>
                 </Select>
-                {user?.role === 'admin' && (
-                  <Button 
-                    className="px-6 py-3 rounded-lg font-semibold transition-all duration-200 min-h-[44px] flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white" 
-                    onClick={() => setIsAddCameraOpen(true)}
-                  >
-                    <Camera className="h-4 w-4 mr-2" />
-                    Add Camera
-                  </Button>
-                )}
+                <Button 
+                  className="px-6 py-3 rounded-lg font-semibold transition-all duration-200 min-h-[44px] flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white" 
+                  onClick={() => setIsAddCameraOpen(true)}
+                >
+                  <Camera className="h-4 w-4 mr-2" />
+                  Add Camera
+                </Button>
               </div>
             </div>
 
@@ -1040,15 +1078,13 @@ const Dashboard = () => {
                     <h3 className="text-xl font-semibold text-gray-400 mb-2">No Cameras Available</h3>
                     <p className="text-gray-500">Add cameras to start monitoring railway operations.</p>
                   </div>
-                  {user?.role === 'admin' && (
-                    <Button 
-                      onClick={() => setIsAddCameraOpen(true)} 
-                      className="px-6 py-3 rounded-lg font-semibold transition-all duration-200 min-h-[44px] flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white"
-                    >
-                      <Camera className="h-4 w-4 mr-2" />
-                      Add Your First Camera
-                    </Button>
-                  )}
+                  <Button 
+                    onClick={() => setIsAddCameraOpen(true)} 
+                    className="px-6 py-3 rounded-lg font-semibold transition-all duration-200 min-h-[44px] flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    <Camera className="h-4 w-4 mr-2" />
+                    Add Your First Camera
+                  </Button>
                 </CardContent>
               </Card>
             ) : (
@@ -1101,20 +1137,34 @@ const Dashboard = () => {
                   </div>
                   <div className="space-y-3">
                     <Label htmlFor="source" className="text-base font-semibold text-gray-200">Camera Source</Label>
-                    <Select 
-                      value={newCamera.source} 
-                      onValueChange={(value) => setNewCamera({...newCamera, source: value})}
-                    >
-                      <SelectTrigger className="bg-gray-800 border-gray-600 h-12 text-base">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-gray-800 border-gray-600">
-                        <SelectItem value="0">Default Webcam (0)</SelectItem>
-                        <SelectItem value="1">USB Camera (1)</SelectItem>
-                        <SelectItem value="2">USB Camera (2)</SelectItem>
-                        <SelectItem value="rtsp://192.168.1.100:554/stream">IP Camera (RTSP)</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Input
+                      id="source"
+                      value={newCamera.source}
+                      onChange={(e) => setNewCamera({...newCamera, source: e.target.value})}
+                      className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 h-12 px-4 text-base"
+                      placeholder="0, 1, or rtsp://..."
+                      required
+                    />
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      {[
+                        { label: 'Webcam (0)', value: '0' },
+                        { label: 'USB Cam (1)', value: '1' },
+                        { label: 'USB Cam (2)', value: '2' },
+                      ].map((preset) => (
+                        <button
+                          key={preset.value}
+                          type="button"
+                          onClick={() => setNewCamera({...newCamera, source: preset.value})}
+                          className={`text-xs px-3 py-1.5 rounded-md border transition-colors ${
+                            newCamera.source === preset.value
+                              ? 'bg-blue-600 border-blue-500 text-white'
+                              : 'bg-gray-800 border-gray-600 text-gray-400 hover:bg-gray-700 hover:text-gray-200'
+                          }`}
+                        >
+                          {preset.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                   <div className="grid grid-cols-2 gap-6">
                     <div className="space-y-3">
@@ -1590,7 +1640,7 @@ const Dashboard = () => {
                     <span className="font-medium">Reconnect WebSocket</span>
                   </Button>
                   
-                  {user?.role === 'admin' && (
+                  {isAdmin(user) && (
                     <Button 
                       variant="outline" 
                       className="w-full justify-start border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white hover:border-gray-500 transition-all duration-200 h-12 px-4 !mb-2"

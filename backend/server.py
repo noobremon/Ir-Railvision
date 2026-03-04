@@ -663,8 +663,8 @@ async def get_me(current_user: User = Depends(get_current_user)):
 
 @api_router.post("/cameras", response_model=Camera)
 async def create_camera(camera_data: CameraCreate, current_user: User = Depends(get_current_user)):
-    if current_user.role not in [UserRole.ADMIN]:
-        raise HTTPException(status_code=403, detail="Insufficient permissions")
+    if current_user.role not in [UserRole.ADMIN, UserRole.OPERATOR]:
+        raise HTTPException(status_code=403, detail="Insufficient permissions. Only admins and operators can add cameras.")
     
     camera = Camera(**camera_data.dict())
     await db_insert_one('cameras', camera.dict())
@@ -684,8 +684,8 @@ async def get_camera(camera_id: str, current_user: User = Depends(get_current_us
 
 @api_router.put("/cameras/{camera_id}", response_model=Camera)
 async def update_camera(camera_id: str, camera_data: CameraCreate, current_user: User = Depends(get_current_user)):
-    if current_user.role not in [UserRole.ADMIN]:
-        raise HTTPException(status_code=403, detail="Insufficient permissions")
+    if current_user.role not in [UserRole.ADMIN, UserRole.OPERATOR]:
+        raise HTTPException(status_code=403, detail="Insufficient permissions. Only admins and operators can update cameras.")
     
     result = await db_update_one('cameras', {"id": camera_id}, {"$set": camera_data.dict()})
     
@@ -700,8 +700,8 @@ async def update_camera(camera_id: str, camera_data: CameraCreate, current_user:
 
 @api_router.delete("/cameras/{camera_id}")
 async def delete_camera(camera_id: str, current_user: User = Depends(get_current_user)):
-    if current_user.role not in [UserRole.ADMIN]:
-        raise HTTPException(status_code=403, detail="Insufficient permissions")
+    if current_user.role not in [UserRole.ADMIN, UserRole.OPERATOR]:
+        raise HTTPException(status_code=403, detail="Insufficient permissions. Only admins and operators can delete cameras.")
     
     # Stop camera if running
     if camera_id in video_processors:
