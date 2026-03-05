@@ -14,14 +14,14 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './components/ui/table';
 import { Toaster } from './components/ui/toaster';
 import { useToast } from './hooks/use-toast';
-import { 
-  Camera, 
-  Monitor, 
-  Shield, 
-  AlertTriangle, 
-  Users, 
-  Play, 
-  Square, 
+import {
+  Camera,
+  Monitor,
+  Shield,
+  AlertTriangle,
+  Users,
+  Play,
+  Square,
   Settings,
   Eye,
   Bell,
@@ -48,7 +48,9 @@ import {
 } from 'lucide-react';
 
 // In production use the full backend URL; locally use relative path (Vite proxy)
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+const rawApiUrl = import.meta.env.VITE_API_URL || '/api';
+// Ensure the URL always ends with /api
+const API_BASE_URL = rawApiUrl.endsWith('/api') ? rawApiUrl : `${rawApiUrl.replace(/\/+$/, '')}/api`;
 const API = API_BASE_URL;
 
 // Authentication Context
@@ -91,12 +93,12 @@ const AuthProvider = ({ children }) => {
     try {
       const response = await axios.post(`${API_BASE_URL}/auth/login`, { username, password });
       const { access_token, user: userData } = response.data;
-      
+
       localStorage.setItem('token', access_token);
       setToken(access_token);
       setUser(userData);
       axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
-      
+
       return { success: true };
     } catch (error) {
       return { success: false, error: error.response?.data?.detail || 'Login failed' };
@@ -109,7 +111,7 @@ const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Logout error:', error);
     }
-    
+
     localStorage.removeItem('token');
     setToken(null);
     setUser(null);
@@ -134,9 +136,9 @@ const LoginPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     const result = await login(username, password);
-    
+
     if (result.success) {
       toast({
         title: "Login Successful",
@@ -149,7 +151,7 @@ const LoginPage = () => {
         variant: "destructive",
       });
     }
-    
+
     setIsLoading(false);
   };
 
@@ -162,7 +164,7 @@ const LoginPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 center-content p-4">
       <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8ZGVmcz4KICAgIDxwYXR0ZXJuIGlkPSJncmlkIiB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiPgogICAgICA8cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDUpIiBzdHJva2Utd2lkdGg9IjEiLz4KICAgIDwvcGF0dGVybj4KICA8L2RlZnM+CiAgPHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNncmlkKSIgLz4KPC9zdmc+')] opacity-30"></div>
-      
+
       {/* Centered Login Container */}
       <div className="w-full max-w-md relative z-10">
         <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl overflow-hidden">
@@ -178,13 +180,13 @@ const LoginPage = () => {
               Video Surveillance System Login
             </CardDescription>
           </CardHeader>
-          
+
           {/* Form Section */}
           <CardContent className="px-8 py-6 pb-8">
             <form onSubmit={handleSubmit} className="space-y-5 pb-6">
               <div className="space-y-1.5">
                 <Label htmlFor="username" className="block text-sm font-medium text-gray-300 ml-1">
-                     Username
+                  Username
                 </Label>
                 <Input
                   id="username"
@@ -196,7 +198,7 @@ const LoginPage = () => {
                   required
                 />
               </div>
-              
+
               <div className="space-y-1.5">
                 <Label htmlFor="password" className="block text-sm font-medium text-gray-300 ml-1">
                   Password
@@ -211,10 +213,10 @@ const LoginPage = () => {
                   required
                 />
               </div>
-              
+
               <div className="pt-1">
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={isLoading}
                 >
@@ -231,15 +233,15 @@ const LoginPage = () => {
             </form>
           </CardContent>
         </Card>
-        
+
         {/* Demo Credentials - Separate Card */}
         <Card className="mt-6 bg-blue-500/10 backdrop-blur-md border-blue-500/30">
           <CardContent className="p-6 pb-8">
             <h3 className="text-sm font-medium text-blue-200 text-center mb-4">Demo Credentials</h3>
             <div className="space-y-3">
               {demoUsers.map((user, index) => (
-                <div 
-                  key={index} 
+                <div
+                  key={index}
                   className={`flex items-center justify-between bg-blue-500/10 rounded-lg p-3 hover:bg-blue-500/20 transition-colors duration-200 ${index === demoUsers.length - 1 ? '!mb-4' : ''}`}
                 >
                   <span className="text-sm text-blue-200 font-medium">
@@ -272,13 +274,13 @@ const VideoFeed = ({ camera, isActive, onStart, onStop, onDelete, onEdit }) => {
       const canvas = canvasRef.current;
       const ctx = canvas.getContext('2d');
       const img = new Image();
-      
+
       img.onload = () => {
         canvas.width = img.width;
         canvas.height = img.height;
         ctx.drawImage(img, 0, 0);
       };
-      
+
       img.src = `data:image/jpeg;base64,${frameData}`;
     }
   }, [frameData]);
@@ -335,10 +337,10 @@ const VideoFeed = ({ camera, isActive, onStart, onStop, onDelete, onEdit }) => {
               </CardDescription>
             )}
           </div>
-          
+
           <div className="flex items-center gap-3">
-            <Badge 
-              variant={isActive ? "default" : "secondary"} 
+            <Badge
+              variant={isActive ? "default" : "secondary"}
               className={`${getStatusColor()} text-white px-3 py-1 text-xs font-semibold`}
             >
               <div className="flex items-center">
@@ -346,12 +348,12 @@ const VideoFeed = ({ camera, isActive, onStart, onStop, onDelete, onEdit }) => {
                 {getStatusText()}
               </div>
             </Badge>
-            
+
             <div className="flex gap-2">
               {isActive ? (
-                <Button 
-                  size="sm" 
-                  variant="destructive" 
+                <Button
+                  size="sm"
+                  variant="destructive"
                   onClick={async () => {
                     setIsLoading(true);
                     await onStop(camera.id);
@@ -367,9 +369,9 @@ const VideoFeed = ({ camera, isActive, onStart, onStop, onDelete, onEdit }) => {
                   )}
                 </Button>
               ) : (
-                <Button 
-                  size="sm" 
-                  variant="default" 
+                <Button
+                  size="sm"
+                  variant="default"
                   onClick={async () => {
                     setIsLoading(true);
                     await onStart(camera.id);
@@ -385,19 +387,19 @@ const VideoFeed = ({ camera, isActive, onStart, onStop, onDelete, onEdit }) => {
                   )}
                 </Button>
               )}
-              <Button 
-                size="sm" 
-                variant="outline" 
-                onClick={() => onEdit(camera)} 
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onEdit(camera)}
                 disabled={isLoading}
                 className="h-9 w-9 p-0 border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white transition-smooth"
               >
                 <Edit className="h-4 w-4" />
               </Button>
-              <Button 
-                size="sm" 
-                variant="destructive" 
-                onClick={() => onDelete(camera.id)} 
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={() => onDelete(camera.id)}
                 disabled={isLoading}
                 className="h-9 w-9 p-0 bg-red-600 hover:bg-red-700 transition-smooth"
               >
@@ -407,7 +409,7 @@ const VideoFeed = ({ camera, isActive, onStart, onStop, onDelete, onEdit }) => {
           </div>
         </div>
       </CardHeader>
-      
+
       <CardContent className="p-0">
         <div className="relative bg-black rounded-lg overflow-hidden aspect-video mb-4">
           <canvas
@@ -433,7 +435,7 @@ const VideoFeed = ({ camera, isActive, onStart, onStop, onDelete, onEdit }) => {
             </div>
           )}
         </div>
-        
+
         <div className="flex items-center justify-between text-sm text-gray-400 bg-gray-800/50 rounded-lg p-3">
           <span className="font-medium">
             Source: <span className="text-gray-300">{camera.source}</span>
@@ -496,13 +498,13 @@ const Dashboard = () => {
         fetchEvents(),
         fetchStats()
       ]);
-      
+
       // Connect WebSocket after a brief delay to ensure backend is ready
       setTimeout(() => {
         connectWebSocket();
       }, 1000);
     };
-    
+
     initializeApp();
 
     // Set up periodic updates
@@ -516,7 +518,7 @@ const Dashboard = () => {
         wsRef.current.close(1000, 'Page unloading');
       }
     };
-    
+
     window.addEventListener('beforeunload', handleBeforeUnload);
 
     return () => {
@@ -552,7 +554,7 @@ const Dashboard = () => {
           return;
         }
       }
-      
+
       // On production (Render), connect WebSocket directly to backend service
       // On local dev, connect to localhost
       const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
@@ -569,7 +571,7 @@ const Dashboard = () => {
         wsUrl = 'ws://localhost:8000/api/ws';
       }
       console.log('Attempting WebSocket connection to:', wsUrl);
-      
+
       wsRef.current = new WebSocket(wsUrl);
 
       wsRef.current.onopen = () => {
@@ -580,13 +582,13 @@ const Dashboard = () => {
       wsRef.current.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          
+
           if (data.type === 'video_frames') {
             // Handle multiple camera frames
             data.data.forEach(frameData => {
               const canvas = document.querySelector(`canvas[data-camera-id="${frameData.camera_id}"]`);
               if (canvas) {
-                const frameUpdateEvent = new CustomEvent('frameUpdate', { 
+                const frameUpdateEvent = new CustomEvent('frameUpdate', {
                   detail: {
                     frame: frameData.frame,
                     frameCount: frameData.frame_count,
@@ -621,13 +623,13 @@ const Dashboard = () => {
         console.log('WebSocket disconnected. Code:', event.code, 'Reason:', event.reason);
         setConnectionStatus('disconnected');
         wsRef.current = null;
-        
+
         // Clear any existing reconnection timeout
         if (reconnectTimeoutRef.current) {
           clearTimeout(reconnectTimeoutRef.current);
           reconnectTimeoutRef.current = null;
         }
-        
+
         // Only attempt reconnection if it wasn't a manual close (code 1000) or browser going away (code 1001)
         if (event.code !== 1000 && event.code !== 1001 && event.reason !== 'Component unmounting') {
           console.log('Attempting to reconnect WebSocket in 5 seconds...');
@@ -643,11 +645,11 @@ const Dashboard = () => {
         console.error('WebSocket connection error:', error);
         setConnectionStatus('error');
       };
-      
+
     } catch (error) {
       console.error('Failed to initialize WebSocket:', error);
       setConnectionStatus('error');
-      
+
       // Retry connection after 10 seconds on initialization error
       setTimeout(() => {
         console.log('Retrying WebSocket connection...');
@@ -721,12 +723,12 @@ const Dashboard = () => {
     try {
       // Optimistically update UI first for immediate feedback
       setActiveCameras(prev => new Set([...prev, cameraId]));
-      
+
       const response = await axios.post(`${API}/cameras/${cameraId}/start`);
-      
+
       // Update stats without waiting
       fetchStats();
-      
+
       toast({
         title: "Camera Started",
         description: "Camera feed activated successfully",
@@ -738,7 +740,7 @@ const Dashboard = () => {
         newSet.delete(cameraId);
         return newSet;
       });
-      
+
       toast({
         title: "Failed to Start Camera",
         description: error.response?.data?.detail || "Camera activation failed",
@@ -755,12 +757,12 @@ const Dashboard = () => {
         newSet.delete(cameraId);
         return newSet;
       });
-      
+
       const response = await axios.post(`${API}/cameras/${cameraId}/stop`);
-      
+
       // Update stats without waiting
       fetchStats();
-      
+
       toast({
         title: "Camera Stopped",
         description: "Camera feed deactivated",
@@ -768,7 +770,7 @@ const Dashboard = () => {
     } catch (error) {
       // Revert optimistic update on error
       setActiveCameras(prev => new Set([...prev, cameraId]));
-      
+
       toast({
         title: "Failed to Stop Camera",
         description: error.response?.data?.detail || "Camera deactivation failed",
@@ -779,7 +781,7 @@ const Dashboard = () => {
 
   const deleteCamera = async (cameraId) => {
     if (!window.confirm('Are you sure you want to delete this camera?')) return;
-    
+
     try {
       await axios.delete(`${API}/cameras/${cameraId}`);
       setCameras(prev => prev.filter(cam => cam.id !== cameraId));
@@ -789,7 +791,7 @@ const Dashboard = () => {
         return newSet;
       });
       fetchStats();
-      
+
       toast({
         title: "Camera Deleted",
         description: "Camera has been removed from the system",
@@ -815,7 +817,7 @@ const Dashboard = () => {
       setIsEditCameraOpen(false);
       setEditingCamera(null);
       fetchCameras();
-      
+
       toast({
         title: "Camera Updated",
         description: "Camera has been updated successfully",
@@ -831,7 +833,7 @@ const Dashboard = () => {
 
   const handleAddCamera = async (e) => {
     e.preventDefault();
-    
+
     // Validate required fields
     if (!newCamera.name.trim() || !newCamera.location.trim()) {
       toast({
@@ -841,7 +843,7 @@ const Dashboard = () => {
       });
       return;
     }
-    
+
     try {
       const response = await axios.post(`${API}/cameras`, {
         ...newCamera,
@@ -853,7 +855,7 @@ const Dashboard = () => {
       setNewCamera({ name: '', location: '', source: '0', gps_lat: 0, gps_lng: 0 });
       fetchCameras();
       fetchStats();
-      
+
       toast({
         title: "Camera Added",
         description: `"${response.data?.name || newCamera.name}" has been added successfully`,
@@ -861,7 +863,7 @@ const Dashboard = () => {
     } catch (error) {
       const status = error.response?.status;
       const detail = error.response?.data?.detail;
-      
+
       if (status === 403) {
         toast({
           title: "Permission Denied",
@@ -887,11 +889,11 @@ const Dashboard = () => {
   const acknowledgeEvent = async (eventId) => {
     try {
       await axios.put(`${API}/events/${eventId}/acknowledge`);
-      setEvents(prev => prev.map(event => 
+      setEvents(prev => prev.map(event =>
         event.id === eventId ? { ...event, is_acknowledged: true, acknowledged_by: user?.username } : event
       ));
       fetchStats();
-      
+
       toast({
         title: "Event Acknowledged",
         description: "Event has been marked as acknowledged",
@@ -962,10 +964,10 @@ const Dashboard = () => {
               {user?.role?.replace('_', ' ').toUpperCase()}
             </Badge>
             <span className="text-gray-300 font-semibold text-base">{user?.username}</span>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleLogout} 
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLogout}
               className="border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white transition-all duration-200 px-5 py-3 text-base"
             >
               <LogOut className="h-5 w-5 mr-3" />
@@ -1026,22 +1028,22 @@ const Dashboard = () => {
         {/* Main Content with Enhanced Tabs */}
         <Tabs defaultValue="cameras" className="space-y-8">
           <TabsList className="bg-gray-900 border-gray-700 p-1 rounded-xl">
-            <TabsTrigger 
-              value="cameras" 
+            <TabsTrigger
+              value="cameras"
               className="data-[state=active]:bg-blue-600 data-[state=active]:text-white transition-smooth px-6 py-3 rounded-lg font-semibold"
             >
               <Camera className="h-4 w-4 mr-2" />
               Live Cameras ({cameras.length})
             </TabsTrigger>
-            <TabsTrigger 
-              value="events" 
+            <TabsTrigger
+              value="events"
               className="data-[state=active]:bg-blue-600 data-[state=active]:text-white transition-smooth px-6 py-3 rounded-lg font-semibold"
             >
               <AlertTriangle className="h-4 w-4 mr-2" />
               Events ({events.length})
             </TabsTrigger>
-            <TabsTrigger 
-              value="settings" 
+            <TabsTrigger
+              value="settings"
               className="data-[state=active]:bg-blue-600 data-[state=active]:text-white transition-smooth px-6 py-3 rounded-lg font-semibold"
             >
               <Settings className="h-4 w-4 mr-2" />
@@ -1066,8 +1068,8 @@ const Dashboard = () => {
                     <SelectItem value="inactive">Inactive Only</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button 
-                  className="px-6 py-3 rounded-lg font-semibold transition-all duration-200 min-h-[44px] flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white" 
+                <Button
+                  className="px-6 py-3 rounded-lg font-semibold transition-all duration-200 min-h-[44px] flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white"
                   onClick={() => setIsAddCameraOpen(true)}
                 >
                   <Camera className="h-4 w-4 mr-2" />
@@ -1084,8 +1086,8 @@ const Dashboard = () => {
                     <h3 className="text-xl font-semibold text-gray-400 mb-2">No Cameras Available</h3>
                     <p className="text-gray-500">Add cameras to start monitoring railway operations.</p>
                   </div>
-                  <Button 
-                    onClick={() => setIsAddCameraOpen(true)} 
+                  <Button
+                    onClick={() => setIsAddCameraOpen(true)}
                     className="px-6 py-3 rounded-lg font-semibold transition-all duration-200 min-h-[44px] flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white"
                   >
                     <Camera className="h-4 w-4 mr-2" />
@@ -1124,7 +1126,7 @@ const Dashboard = () => {
                     <Input
                       id="name"
                       value={newCamera.name}
-                      onChange={(e) => setNewCamera({...newCamera, name: e.target.value})}
+                      onChange={(e) => setNewCamera({ ...newCamera, name: e.target.value })}
                       className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 h-12 px-4 text-base"
                       placeholder="Platform 1 Camera"
                       required
@@ -1135,7 +1137,7 @@ const Dashboard = () => {
                     <Input
                       id="location"
                       value={newCamera.location}
-                      onChange={(e) => setNewCamera({...newCamera, location: e.target.value})}
+                      onChange={(e) => setNewCamera({ ...newCamera, location: e.target.value })}
                       className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 h-12 px-4 text-base"
                       placeholder="Platform 1, Main Station"
                       required
@@ -1146,7 +1148,7 @@ const Dashboard = () => {
                     <Input
                       id="source"
                       value={newCamera.source}
-                      onChange={(e) => setNewCamera({...newCamera, source: e.target.value})}
+                      onChange={(e) => setNewCamera({ ...newCamera, source: e.target.value })}
                       className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 h-12 px-4 text-base"
                       placeholder="0, 1, or rtsp://..."
                       required
@@ -1160,12 +1162,11 @@ const Dashboard = () => {
                         <button
                           key={preset.value}
                           type="button"
-                          onClick={() => setNewCamera({...newCamera, source: preset.value})}
-                          className={`text-xs px-3 py-1.5 rounded-md border transition-colors ${
-                            newCamera.source === preset.value
+                          onClick={() => setNewCamera({ ...newCamera, source: preset.value })}
+                          className={`text-xs px-3 py-1.5 rounded-md border transition-colors ${newCamera.source === preset.value
                               ? 'bg-blue-600 border-blue-500 text-white'
                               : 'bg-gray-800 border-gray-600 text-gray-400 hover:bg-gray-700 hover:text-gray-200'
-                          }`}
+                            }`}
                         >
                           {preset.label}
                         </button>
@@ -1180,7 +1181,7 @@ const Dashboard = () => {
                         type="number"
                         step="any"
                         value={newCamera.gps_lat}
-                        onChange={(e) => setNewCamera({...newCamera, gps_lat: parseFloat(e.target.value) || 0})}
+                        onChange={(e) => setNewCamera({ ...newCamera, gps_lat: parseFloat(e.target.value) || 0 })}
                         className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 h-12 px-4 text-base"
                         placeholder="28.6139"
                       />
@@ -1192,22 +1193,22 @@ const Dashboard = () => {
                         type="number"
                         step="any"
                         value={newCamera.gps_lng}
-                        onChange={(e) => setNewCamera({...newCamera, gps_lng: parseFloat(e.target.value) || 0})}
+                        onChange={(e) => setNewCamera({ ...newCamera, gps_lng: parseFloat(e.target.value) || 0 })}
                         className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 h-12 px-4 text-base"
                         placeholder="77.2090"
                       />
                     </div>
                   </div>
                   <div className="flex space-x-4 pt-6">
-                    <Button 
-                      type="submit" 
+                    <Button
+                      type="submit"
                       className="flex-1 bg-blue-600 hover:bg-blue-700 transition-all duration-200 h-12 font-semibold text-base"
                     >
                       Add Camera
                     </Button>
-                    <Button 
-                      type="button" 
-                      variant="outline" 
+                    <Button
+                      type="button"
+                      variant="outline"
                       onClick={() => setIsAddCameraOpen(false)}
                       className="border-gray-600 text-gray-300 hover:bg-gray-800 h-12 px-8"
                     >
@@ -1234,7 +1235,7 @@ const Dashboard = () => {
                       <Input
                         id="edit-name"
                         value={editingCamera.name}
-                        onChange={(e) => setEditingCamera({...editingCamera, name: e.target.value})}
+                        onChange={(e) => setEditingCamera({ ...editingCamera, name: e.target.value })}
                         className="bg-gray-800 border-gray-600"
                         required
                       />
@@ -1244,7 +1245,7 @@ const Dashboard = () => {
                       <Input
                         id="edit-location"
                         value={editingCamera.location}
-                        onChange={(e) => setEditingCamera({...editingCamera, location: e.target.value})}
+                        onChange={(e) => setEditingCamera({ ...editingCamera, location: e.target.value })}
                         className="bg-gray-800 border-gray-600"
                         required
                       />
@@ -1254,7 +1255,7 @@ const Dashboard = () => {
                       <Input
                         id="edit-source"
                         value={editingCamera.source}
-                        onChange={(e) => setEditingCamera({...editingCamera, source: e.target.value})}
+                        onChange={(e) => setEditingCamera({ ...editingCamera, source: e.target.value })}
                         className="bg-gray-800 border-gray-600"
                         required
                       />
@@ -1267,7 +1268,7 @@ const Dashboard = () => {
                           type="number"
                           step="any"
                           value={editingCamera.gps_lat}
-                          onChange={(e) => setEditingCamera({...editingCamera, gps_lat: parseFloat(e.target.value) || 0})}
+                          onChange={(e) => setEditingCamera({ ...editingCamera, gps_lat: parseFloat(e.target.value) || 0 })}
                           className="bg-gray-800 border-gray-600"
                         />
                       </div>
@@ -1278,7 +1279,7 @@ const Dashboard = () => {
                           type="number"
                           step="any"
                           value={editingCamera.gps_lng}
-                          onChange={(e) => setEditingCamera({...editingCamera, gps_lng: parseFloat(e.target.value) || 0})}
+                          onChange={(e) => setEditingCamera({ ...editingCamera, gps_lng: parseFloat(e.target.value) || 0 })}
                           className="bg-gray-800 border-gray-600"
                         />
                       </div>
@@ -1315,9 +1316,9 @@ const Dashboard = () => {
                     <SelectItem value="person_detected">Person</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button 
-                  variant="outline" 
-                  onClick={fetchEvents} 
+                <Button
+                  variant="outline"
+                  onClick={fetchEvents}
                   className="border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white transition-all duration-200 px-6 py-3 text-base"
                 >
                   <RefreshCw className="h-5 w-5 mr-3" />
@@ -1379,9 +1380,9 @@ const Dashboard = () => {
                         <TableCell className="py-6">
                           <div className="flex space-x-3">
                             {!event.is_acknowledged && (
-                              <Button 
-                                size="sm" 
-                                variant="outline" 
+                              <Button
+                                size="sm"
+                                variant="outline"
                                 onClick={() => acknowledgeEvent(event.id)}
                                 className="border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white transition-all duration-200 px-4 py-2 text-base"
                               >
@@ -1442,228 +1443,228 @@ const Dashboard = () => {
                     </div>
                   </div>
                 </div>
-              
-              {/* System Status Card */}
-              <Card className="bg-gray-900 border-gray-700 shadow-xl hover:border-gray-600 transition-all duration-300">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-white flex items-center text-lg">
-                    <Server className="h-5 w-5 mr-3 text-green-400" />
-                    System Status
-                  </CardTitle>
-                  <CardDescription className="text-gray-400">Current system health and performance</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between py-2">
-                    <span className="text-gray-400 font-medium">Backend</span>
-                    <Badge variant="default" className="bg-green-500/20 text-green-400 px-3 py-1 font-medium">
-                      <Database className="h-3 w-3 mr-2" />
-                      Online
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between py-2 border-t border-gray-700">
-                    <span className="text-gray-400 font-medium">Database</span>
-                    <Badge 
-                      variant={stats.system_health?.database === 'online' ? 'default' : 'secondary'} 
-                      className={stats.system_health?.database === 'online' ? 'bg-green-500/20 text-green-400 px-3 py-1 font-medium' : 'bg-yellow-500/20 text-yellow-400 px-3 py-1 font-medium'}
-                    >
-                      {stats.system_health?.database === 'online' ? 'Connected' : 'Mock Mode'}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between py-2 border-t border-gray-700">
-                    <span className="text-gray-400 font-medium">WebSocket</span>
-                    <Badge 
-                      variant={connectionStatus === 'connected' ? 'default' : 'destructive'} 
-                      className={connectionStatus === 'connected' ? 'bg-green-500/20 text-green-400 px-3 py-1 font-medium' : 'bg-red-500/20 text-red-400 px-3 py-1 font-medium'}
-                    >
-                      <div className={`w-2 h-2 rounded-full mr-2 ${connectionStatus === 'connected' ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`}></div>
-                      {connectionStatus === 'connected' ? 'Connected' : 'Disconnected'}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between py-2 border-t border-gray-700">
-                    <span className="text-gray-400 font-medium">Active Cameras</span>
-                    <span className="text-white font-semibold">{stats.active_cameras || 0}/{stats.total_cameras || 0}</span>
-                  </div>
-                </CardContent>
-              </Card>
 
-              {/* System Health Overview */}
-              <Card className="bg-gray-900 border-gray-700">
-                <CardHeader>
-                  <CardTitle className="text-white flex items-center">
-                    <Activity className="h-5 w-5 mr-2" />
-                    System Health
-                  </CardTitle>
-                  <CardDescription className="text-gray-400">Overall system performance metrics</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-400">Video Processing</span>
-                    <Badge variant={stats.system_health?.video_processing === 'active' ? 'default' : 'secondary'}
-                           className={stats.system_health?.video_processing === 'active' ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'}>
-                      {stats.system_health?.video_processing === 'active' ? 'Active' : 'Inactive'}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-400">Storage</span>
-                    <Badge variant="default" className="bg-green-500/20 text-green-400">
-                      Available
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-400">Connected Clients</span>
-                    <span className="text-white font-medium">{stats.connected_clients || 0}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-400">System Version</span>
-                    <span className="text-white font-medium">v1.0.0</span>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Events Summary Card */}
-              <Card className="bg-gray-900 border-gray-700">
-                <CardHeader>
-                  <CardTitle className="text-white flex items-center">
-                    <AlertTriangle className="h-5 w-5 mr-2" />
-                    Events Summary
-                  </CardTitle>
-                  <CardDescription className="text-gray-400">Recent security events overview</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-400">Today's Events</span>
-                    <span className="text-white font-medium">{stats.today_events || 0}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-400">Unacknowledged</span>
-                    <Badge variant={stats.unacknowledged_events > 0 ? 'destructive' : 'default'}
-                           className={stats.unacknowledged_events > 0 ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}>
-                      {stats.unacknowledged_events || 0}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-400">Total Events</span>
-                    <span className="text-white font-medium">{Object.values(stats.events_by_type || {}).reduce((a, b) => a + b, 0)}</span>
-                  </div>
-                  {stats.events_by_type && Object.keys(stats.events_by_type).length > 0 && (
-                    <div className="pt-2 border-t border-gray-700">
-                      <span className="text-gray-400 text-sm">Most Common:</span>
-                      <div className="mt-1">
-                        {Object.entries(stats.events_by_type)
-                          .sort(([,a], [,b]) => b - a)
-                          .slice(0, 2)
-                          .map(([type, count]) => (
-                            <div key={type} className="flex justify-between text-sm">
-                              <span className="text-gray-300 capitalize">{type.replace('_', ' ')}</span>
-                              <span className="text-white">{count}</span>
-                            </div>
-                          ))
-                        }
-                      </div>
+                {/* System Status Card */}
+                <Card className="bg-gray-900 border-gray-700 shadow-xl hover:border-gray-600 transition-all duration-300">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="text-white flex items-center text-lg">
+                      <Server className="h-5 w-5 mr-3 text-green-400" />
+                      System Status
+                    </CardTitle>
+                    <CardDescription className="text-gray-400">Current system health and performance</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between py-2">
+                      <span className="text-gray-400 font-medium">Backend</span>
+                      <Badge variant="default" className="bg-green-500/20 text-green-400 px-3 py-1 font-medium">
+                        <Database className="h-3 w-3 mr-2" />
+                        Online
+                      </Badge>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
+                    <div className="flex items-center justify-between py-2 border-t border-gray-700">
+                      <span className="text-gray-400 font-medium">Database</span>
+                      <Badge
+                        variant={stats.system_health?.database === 'online' ? 'default' : 'secondary'}
+                        className={stats.system_health?.database === 'online' ? 'bg-green-500/20 text-green-400 px-3 py-1 font-medium' : 'bg-yellow-500/20 text-yellow-400 px-3 py-1 font-medium'}
+                      >
+                        {stats.system_health?.database === 'online' ? 'Connected' : 'Mock Mode'}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between py-2 border-t border-gray-700">
+                      <span className="text-gray-400 font-medium">WebSocket</span>
+                      <Badge
+                        variant={connectionStatus === 'connected' ? 'default' : 'destructive'}
+                        className={connectionStatus === 'connected' ? 'bg-green-500/20 text-green-400 px-3 py-1 font-medium' : 'bg-red-500/20 text-red-400 px-3 py-1 font-medium'}
+                      >
+                        <div className={`w-2 h-2 rounded-full mr-2 ${connectionStatus === 'connected' ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`}></div>
+                        {connectionStatus === 'connected' ? 'Connected' : 'Disconnected'}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between py-2 border-t border-gray-700">
+                      <span className="text-gray-400 font-medium">Active Cameras</span>
+                      <span className="text-white font-semibold">{stats.active_cameras || 0}/{stats.total_cameras || 0}</span>
+                    </div>
+                  </CardContent>
+                </Card>
 
-              {/* System Information Card */}
-              <Card className="bg-gray-900 border-gray-700">
-                <CardHeader>
-                  <CardTitle className="text-white flex items-center">
-                    <Info className="h-5 w-5 mr-2" />
-                    System Information
-                  </CardTitle>
-                  <CardDescription className="text-gray-400">Technical system details</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-400">Frontend</span>
-                    <span className="text-white font-medium">React + Vite</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-400">Backend</span>
-                    <span className="text-white font-medium">FastAPI + Python</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-400">Database</span>
-                    <span className="text-white font-medium">MongoDB</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-400">Authentication</span>
-                    <span className="text-white font-medium">JWT Tokens</span>
-                  </div>
-                  
-                </CardContent>
-              </Card>
+                {/* System Health Overview */}
+                <Card className="bg-gray-900 border-gray-700">
+                  <CardHeader>
+                    <CardTitle className="text-white flex items-center">
+                      <Activity className="h-5 w-5 mr-2" />
+                      System Health
+                    </CardTitle>
+                    <CardDescription className="text-gray-400">Overall system performance metrics</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-400">Video Processing</span>
+                      <Badge variant={stats.system_health?.video_processing === 'active' ? 'default' : 'secondary'}
+                        className={stats.system_health?.video_processing === 'active' ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'}>
+                        {stats.system_health?.video_processing === 'active' ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-400">Storage</span>
+                      <Badge variant="default" className="bg-green-500/20 text-green-400">
+                        Available
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-400">Connected Clients</span>
+                      <span className="text-white font-medium">{stats.connected_clients || 0}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-400">System Version</span>
+                      <span className="text-white font-medium">v1.0.0</span>
+                    </div>
+                  </CardContent>
+                </Card>
 
-              {/* Quick Actions Card */}
-              <Card className="bg-gray-900 border-gray-700 shadow-xl hover:border-gray-600 transition-all duration-300">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-white flex items-center text-lg">
-                    <Settings className="h-5 w-5 mr-3 text-purple-400" />
-                    Quick Actions
-                  </CardTitle>
-                  <CardDescription className="text-gray-400">System administration tools</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3 pb-4">
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white hover:border-gray-500 transition-all duration-200 h-12 px-4"
-                    onClick={() => {
-                      fetchStats();
-                      fetchCameras();
-                      fetchEvents();
-                      toast({
-                        title: "System Refreshed",
-                        description: "All data has been reloaded",
-                      });
-                    }}
-                  >
-                    <RefreshCw className="h-4 w-4 mr-3" />
-                    <span className="font-medium">Refresh System Data</span>
-                  </Button>
-                  
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white hover:border-gray-500 transition-all duration-200 h-12 px-4"
-                    onClick={() => {
-                      // Clear any existing timeouts
-                      if (reconnectTimeoutRef.current) {
-                        clearTimeout(reconnectTimeoutRef.current);
-                      }
-                      // Force WebSocket reconnection
-                      if (wsRef.current) {
-                        wsRef.current.close();
-                        wsRef.current = null;
-                      }
-                      setTimeout(() => connectWebSocket(), 1000);
-                      toast({
-                        title: "WebSocket Reconnected",
-                        description: "Real-time connection refreshed",
-                      });
-                    }}
-                  >
-                    <Wifi className="h-4 w-4 mr-3" />
-                    <span className="font-medium">Reconnect WebSocket</span>
-                  </Button>
-                  
-                  {isAdmin(user) && (
-                    <Button 
-                      variant="outline" 
-                      className="w-full justify-start border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white hover:border-gray-500 transition-all duration-200 h-12 px-4 !mb-2"
+                {/* Events Summary Card */}
+                <Card className="bg-gray-900 border-gray-700">
+                  <CardHeader>
+                    <CardTitle className="text-white flex items-center">
+                      <AlertTriangle className="h-5 w-5 mr-2" />
+                      Events Summary
+                    </CardTitle>
+                    <CardDescription className="text-gray-400">Recent security events overview</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-400">Today's Events</span>
+                      <span className="text-white font-medium">{stats.today_events || 0}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-400">Unacknowledged</span>
+                      <Badge variant={stats.unacknowledged_events > 0 ? 'destructive' : 'default'}
+                        className={stats.unacknowledged_events > 0 ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}>
+                        {stats.unacknowledged_events || 0}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-400">Total Events</span>
+                      <span className="text-white font-medium">{Object.values(stats.events_by_type || {}).reduce((a, b) => a + b, 0)}</span>
+                    </div>
+                    {stats.events_by_type && Object.keys(stats.events_by_type).length > 0 && (
+                      <div className="pt-2 border-t border-gray-700">
+                        <span className="text-gray-400 text-sm">Most Common:</span>
+                        <div className="mt-1">
+                          {Object.entries(stats.events_by_type)
+                            .sort(([, a], [, b]) => b - a)
+                            .slice(0, 2)
+                            .map(([type, count]) => (
+                              <div key={type} className="flex justify-between text-sm">
+                                <span className="text-gray-300 capitalize">{type.replace('_', ' ')}</span>
+                                <span className="text-white">{count}</span>
+                              </div>
+                            ))
+                          }
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* System Information Card */}
+                <Card className="bg-gray-900 border-gray-700">
+                  <CardHeader>
+                    <CardTitle className="text-white flex items-center">
+                      <Info className="h-5 w-5 mr-2" />
+                      System Information
+                    </CardTitle>
+                    <CardDescription className="text-gray-400">Technical system details</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-400">Frontend</span>
+                      <span className="text-white font-medium">React + Vite</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-400">Backend</span>
+                      <span className="text-white font-medium">FastAPI + Python</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-400">Database</span>
+                      <span className="text-white font-medium">MongoDB</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-400">Authentication</span>
+                      <span className="text-white font-medium">JWT Tokens</span>
+                    </div>
+
+                  </CardContent>
+                </Card>
+
+                {/* Quick Actions Card */}
+                <Card className="bg-gray-900 border-gray-700 shadow-xl hover:border-gray-600 transition-all duration-300">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="text-white flex items-center text-lg">
+                      <Settings className="h-5 w-5 mr-3 text-purple-400" />
+                      Quick Actions
+                    </CardTitle>
+                    <CardDescription className="text-gray-400">System administration tools</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3 pb-4">
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white hover:border-gray-500 transition-all duration-200 h-12 px-4"
                       onClick={() => {
+                        fetchStats();
+                        fetchCameras();
+                        fetchEvents();
                         toast({
-                          title: "Export Data",
-                          description: "System data export feature coming soon",
+                          title: "System Refreshed",
+                          description: "All data has been reloaded",
                         });
                       }}
                     >
-                      <Download className="h-4 w-4 mr-3" />
-                      <span className="font-medium">Export System Data</span>
+                      <RefreshCw className="h-4 w-4 mr-3" />
+                      <span className="font-medium">Refresh System Data</span>
                     </Button>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
+
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white hover:border-gray-500 transition-all duration-200 h-12 px-4"
+                      onClick={() => {
+                        // Clear any existing timeouts
+                        if (reconnectTimeoutRef.current) {
+                          clearTimeout(reconnectTimeoutRef.current);
+                        }
+                        // Force WebSocket reconnection
+                        if (wsRef.current) {
+                          wsRef.current.close();
+                          wsRef.current = null;
+                        }
+                        setTimeout(() => connectWebSocket(), 1000);
+                        toast({
+                          title: "WebSocket Reconnected",
+                          description: "Real-time connection refreshed",
+                        });
+                      }}
+                    >
+                      <Wifi className="h-4 w-4 mr-3" />
+                      <span className="font-medium">Reconnect WebSocket</span>
+                    </Button>
+
+                    {isAdmin(user) && (
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white hover:border-gray-500 transition-all duration-200 h-12 px-4 !mb-2"
+                        onClick={() => {
+                          toast({
+                            title: "Export Data",
+                            description: "System data export feature coming soon",
+                          });
+                        }}
+                      >
+                        <Download className="h-4 w-4 mr-3" />
+                        <span className="font-medium">Export System Data</span>
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           </TabsContent>
         </Tabs>
@@ -1707,13 +1708,13 @@ const AppContent = () => {
 
   return (
     <Routes>
-      <Route 
-        path="/login" 
-        element={!user ? <LoginPage /> : <Navigate to="/" replace />} 
+      <Route
+        path="/login"
+        element={!user ? <LoginPage /> : <Navigate to="/" replace />}
       />
-      <Route 
-        path="/" 
-        element={user ? <Dashboard /> : <Navigate to="/login" replace />} 
+      <Route
+        path="/"
+        element={user ? <Dashboard /> : <Navigate to="/login" replace />}
       />
     </Routes>
   );
